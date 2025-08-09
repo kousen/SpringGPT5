@@ -117,7 +117,13 @@ The integration tests require a valid OpenAI API key to be set in the environmen
 spring.application.name=SpringGPT5
 spring.ai.openai.chat.options.model=gpt-5-nano
 spring.ai.openai.chat.options.temperature=1.0
+openai.reasoning.model=gpt-5-nano
 ```
+
+### Model Configuration
+- **Spring AI model**: Configured via `spring.ai.openai.chat.options.model`
+- **Reasoning model**: Configured via `openai.reasoning.model` (defaults to `gpt-5-nano`)
+- For production, you can use `gpt-5` for the reasoning model
 
 ### Reasoning Effort Levels
 - `MINIMAL`: Basic reasoning

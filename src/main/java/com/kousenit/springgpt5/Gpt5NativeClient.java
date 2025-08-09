@@ -2,6 +2,7 @@ package com.kousenit.springgpt5;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -13,10 +14,13 @@ import java.util.Map;
 public class Gpt5NativeClient {
     private final RestClient rc;      // points at /v1
     private final ObjectMapper mapper;
+    private final String model;
 
-    public Gpt5NativeClient(RestClient openAiResponses, ObjectMapper mapper) {
+    public Gpt5NativeClient(RestClient openAiResponses, ObjectMapper mapper, 
+                           @Value("${openai.reasoning.model:gpt-5-nano}") String model) {
         this.rc = openAiResponses;
         this.mapper = mapper;
+        this.model = model;
     }
 
     /**
@@ -38,11 +42,11 @@ public class Gpt5NativeClient {
         // Readable request template; plug in the JSON fragments safely with %s
         String body = """
                 {
-                  "model": "gpt-5",
+                  "model": "%s",
                   "input": %s,
                   "reasoning": { "effort": %s }
                 }
-                """.formatted(messagesJson, effortJson);
+                """.formatted(model, messagesJson, effortJson);
 
         JsonNode resp = rc.post()
                 .uri("/responses")
