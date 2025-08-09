@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
-public class Gpt5Test {
+class Gpt5Test {
     @Autowired
     private OpenAiChatModel model;
 

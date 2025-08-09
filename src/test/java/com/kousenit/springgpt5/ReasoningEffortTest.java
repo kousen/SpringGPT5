@@ -18,13 +18,14 @@ class ReasoningEffortTest {
     @Test
     void shouldHaveAllExpectedValues() {
         ReasoningEffort[] values = ReasoningEffort.values();
-        assertThat(values).hasSize(4);
-        assertThat(values).containsExactly(
-                ReasoningEffort.MINIMAL,
-                ReasoningEffort.LOW,
-                ReasoningEffort.MEDIUM,
-                ReasoningEffort.HIGH
-        );
+        assertThat(values)
+                .hasSize(4)
+                .containsExactly(
+                        ReasoningEffort.MINIMAL,
+                        ReasoningEffort.LOW,
+                        ReasoningEffort.MEDIUM,
+                        ReasoningEffort.HIGH
+                );
     }
 
     @Test
