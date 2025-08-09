@@ -26,7 +26,7 @@ A Spring Boot application demonstrating integration with OpenAI's GPT-5 model us
 
 ## Prerequisites
 
-- Java 24
+- Java 21
 - OpenAI API key with GPT-5 access
 - Gradle 8.x
 
@@ -83,6 +83,13 @@ Run the test suite:
 ./gradlew test
 ```
 
+Generate code coverage report:
+```bash
+./gradlew jacocoTestReport
+```
+
+View coverage report at `build/reports/jacoco/test/html/index.html`
+
 The integration tests require a valid OpenAI API key to be set in the environment.
 
 ## Configuration
@@ -103,7 +110,7 @@ spring.ai.openai.chat.options.temperature=1.0
 ## CI/CD
 
 The project includes GitHub Actions workflow that:
-- Runs on Java 24 with Temurin distribution
+- Runs on Java 21 with Temurin distribution
 - Executes all tests including integration tests
 - Caches Gradle dependencies
 - Uploads test reports and coverage
@@ -143,6 +150,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Spring Boot 3.5.4
 - Spring AI 1.0.1
-- Java 24
+- Java 21
 - JUnit 5
 - AssertJ
+- JaCoCo (code coverage)
