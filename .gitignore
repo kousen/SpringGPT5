@@ -94,5 +94,8 @@ mvnw.cmd
 *.rar
 !gradle/wrapper/gradle-wrapper.jar
 
+# Claude Code
+.claude/settings.local.json
+
 # Documentation
 HELP.md

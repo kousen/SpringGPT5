@@ -1,15 +1,22 @@
 # SpringGPT5
 
+[![Release](https://img.shields.io/github/v/release/kousen/SpringGPT5?color=green)](https://github.com/kousen/SpringGPT5/releases)
+[![Build Status](https://github.com/kousen/SpringGPT5/workflows/CI/badge.svg)](https://github.com/kousen/SpringGPT5/actions)
+[![Coverage](https://img.shields.io/badge/coverage-63%25-green.svg)](https://github.com/kousen/SpringGPT5/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A modern Spring Boot application demonstrating OpenAI GPT-5 integration with advanced Java 21 features, comprehensive testing, and enterprise-grade code quality practices.
+
+> **✨ Version 1.0 Released!** - Production-ready with 63% test coverage, zero code quality issues, and comprehensive documentation.
 
 ## 🚀 Features
 
 - **🔄 Dual Integration Approach**: Spring AI `ChatClient` + direct OpenAI API calls
 - **🧠 GPT-5 Reasoning API**: Access to OpenAI's reasoning capabilities with configurable effort levels
 - **🔒 Type-Safe Design**: Sealed interfaces and pattern matching for bulletproof code
-- **🧪 Comprehensive Testing**: 63% code coverage with unit, integration, and parameterized tests
+- **🧪 Comprehensive Testing**: 63% code coverage with unit, integration, and parameterized tests (22 passing tests)
 - **⚡ Modern Java 21**: Sealed interfaces, pattern matching, records, and text blocks
-- **🏗️ Enterprise CI/CD**: GitHub Actions, SonarCloud analysis, JaCoCo coverage, dependency verification
+- **🏗️ Enterprise CI/CD**: GitHub Actions, SonarCloud analysis, JaCoCo coverage
 - **📊 Code Quality**: Zero SonarCloud issues with strategic rule configuration
 
 ## Architecture
@@ -150,7 +157,6 @@ Both Spring AI `ChatClient` and the native `Gpt5NativeClient` use the same model
 - **Integration tests** on main branch (using `gpt-5-nano` for cost efficiency)
 - **Gradle dependency caching** for faster builds
 - **JaCoCo coverage reports** with 63% instruction coverage
-- **Dependency verification** for supply chain security
 
 ### SonarCloud Integration
 - **Zero code issues** ✅
@@ -161,9 +167,9 @@ Both Spring AI `ChatClient` and the native `Gpt5NativeClient` use the same model
   - `java:S4144` - Duplicate code blocks in switch (disabled)
 
 ### Security Features
-- **Gradle dependency verification** with SHA256/MD5 checksums
 - **GitHub Security Hotspots Review** passing
 - **No security vulnerabilities** detected
+- **Dependency verification** removed for educational project simplicity
 
 ### GitHub Secrets Setup
 Add your OpenAI API key as a repository secret:
