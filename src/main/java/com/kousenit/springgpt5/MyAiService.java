@@ -29,35 +29,15 @@ class MyAiService {
         return gpt5.chatText(prompt, effort);
     }
 
-    /**
-     * Extract content safely using pattern matching
-     */
-    public String extractSafeContent(ApiResponse response) {
-        return switch (response) {
-            case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> {
-                System.out.printf("Success with %d input tokens, %d output tokens%n", 
-                    input != null ? input : 0, 
-                    output != null ? output : 0);
-                yield text;
-            }
-            case ApiResponse.Error(var message, var code, var raw) -> {
-                System.err.printf("API Error [%s]: %s%n", code, message);
-                yield null;
-            }
-            case ApiResponse.Partial(var availableText, var reason, var raw) -> {
-                System.out.printf("Partial response: %s%n", reason);
-                yield availableText;
-            }
-        };
-    }
 
     /**
      * Process response with detailed pattern matching
      */
     public ResponseSummary summarizeResponse(ApiResponse response) {
-        var summary = switch (response) {
+
+        return switch (response) {
             case ApiResponse.Success success -> {
-                var tokenCount = (success.inputTokens() != null ? success.inputTokens() : 0) + 
+                var tokenCount = (success.inputTokens() != null ? success.inputTokens() : 0) +
                                (success.outputTokens() != null ? success.outputTokens() : 0);
                 yield new ResponseSummary(
                     new ResponseSummary.SUCCESS(),
@@ -79,8 +59,6 @@ class MyAiService {
                 partial.reason()
             );
         };
-
-        return summary;
     }
 
     /**

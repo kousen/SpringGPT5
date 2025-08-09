@@ -10,7 +10,6 @@ import org.springframework.web.client.RestClient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -59,7 +58,7 @@ public class Gpt5NativeClient {
         return parseApiResponse(resp);
     }
 
-    // ----- tiny tree helpers -----
+    // ----- tree helpers -----
     private static String firstText(JsonNode root, String... pointers) {
         return Arrays.stream(pointers)
                 .map(root::at)
@@ -97,7 +96,7 @@ public class Gpt5NativeClient {
         var response = chatWithReasoning(userPrompt, effort);
         return switch (response) {
             case ApiResponse.Success success -> success.text();
-            case ApiResponse.Error error -> null;
+            case ApiResponse.Error ignored -> null;
             case ApiResponse.Partial partial -> partial.availableText();
         };
     }
