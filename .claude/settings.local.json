@@ -6,7 +6,8 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(timeout:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(OPENAI_API_KEY=$OPENAI_API_KEY ./gradlew test --tests \"*MyAiServiceTest*\" -Dtest.profile=integration --info)"
     ],
     "deny": []
   }
