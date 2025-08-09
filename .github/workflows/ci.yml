@@ -37,11 +37,13 @@ jobs:
       run: ./gradlew test
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SPRING_AI_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
     - name: Run integration tests
       run: ./gradlew integrationTest
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SPRING_AI_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         
     - name: Upload test results
@@ -139,4 +141,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # Needed for integration tests in coverage
+        SPRING_AI_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: ./gradlew build sonar --info
