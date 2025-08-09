@@ -34,6 +34,27 @@ dependencyManagement {
 }
 
 tasks.withType<Test> {
+    useJUnitPlatform {
+        excludeTags("slow")
+    }
+    jvmArgs = listOf("-Xshare:off", "-XX:+EnableDynamicAgentLoading")
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Run integration tests including slow OpenAI API tests"
+    group = "verification"
+    useJUnitPlatform {
+        includeTags("slow")
+    }
+    jvmArgs = listOf("-Xshare:off", "-XX:+EnableDynamicAgentLoading")
+    finalizedBy(tasks.jacocoTestReport)
+    shouldRunAfter(tasks.test)
+}
+
+tasks.register<Test>("allTests") {
+    description = "Run all tests including integration tests"
+    group = "verification"
     useJUnitPlatform()
     jvmArgs = listOf("-Xshare:off", "-XX:+EnableDynamicAgentLoading")
     finalizedBy(tasks.jacocoTestReport)

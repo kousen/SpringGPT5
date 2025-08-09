@@ -33,10 +33,14 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
-    - name: Run tests
+    - name: Run fast tests
       run: ./gradlew test
+      
+    - name: Run integration tests
+      run: ./gradlew integrationTest
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         
     - name: Upload test results
       uses: actions/upload-artifact@v4

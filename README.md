@@ -78,17 +78,35 @@ Integer tokens = result.inputTokens();
 
 ## Testing
 
-Run the test suite:
+### Fast Tests (Default)
+Run unit tests and fast integration tests (excludes slow OpenAI API calls):
 ```bash
 ./gradlew test
 ```
 
+### Integration Tests
+Run slow integration tests that make actual OpenAI API calls:
+```bash
+./gradlew integrationTest
+```
+
+### All Tests
+Run both fast and slow tests:
+```bash
+./gradlew allTests
+```
+
+### Code Coverage
 Generate code coverage report:
 ```bash
 ./gradlew jacocoTestReport
 ```
 
 View coverage report at `build/reports/jacoco/test/html/index.html`
+
+### Test Categories
+- **Fast tests**: Unit tests and mocked integrations (run by default)
+- **Slow integration tests**: Marked with `@SlowIntegrationTest`, require OpenAI API key and take 2+ minutes
 
 The integration tests require a valid OpenAI API key to be set in the environment.
 
@@ -111,7 +129,8 @@ spring.ai.openai.chat.options.temperature=1.0
 
 The project includes GitHub Actions workflow that:
 - Runs on Java 21 with Temurin distribution
-- Executes all tests including integration tests
+- Executes fast tests on all PRs and pushes
+- Runs integration tests only on main branch pushes
 - Caches Gradle dependencies
 - Uploads test reports and coverage
 

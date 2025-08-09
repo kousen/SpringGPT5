@@ -23,7 +23,7 @@ public class Gpt5Test {
         client = ChatClient.create(model);
     }
 
-    @Test
+    @SlowIntegrationTest
     void testChat() {
         ChatResponse chatResponse = client.prompt()
                 .user("Explain quines in Java.")

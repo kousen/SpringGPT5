@@ -22,7 +22,7 @@ class MyAiServiceTest {
         assertTrue(answer.contains("42"));
     }
 
-    @Test
+    @SlowIntegrationTest
     void gpt5ReasoningAnswer() throws Exception {
         Gpt5NativeClient.Result result = service.gpt5ReasoningAnswer("""
                 Explain the benefits of data-oriented programming
@@ -36,7 +36,7 @@ class MyAiServiceTest {
         assertTrue(result.text().contains("data-oriented programming"));
     }
 
-    @Test
+    @SlowIntegrationTest
     void testGpt5ReasoningAnswer() throws Exception {
         Gpt5NativeClient.Result result = service.gpt5ReasoningAnswer("""
                 Explain the benefits of data-oriented programming
@@ -52,7 +52,7 @@ class MyAiServiceTest {
 
     }
 
-    @Test
+    @SlowIntegrationTest
     void gpt5TextAnswer() throws Exception {
         String answer = service.gpt5TextAnswer("""
                 Why should I use Java for
