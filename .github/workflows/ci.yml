@@ -35,6 +35,8 @@ jobs:
       
     - name: Run fast tests
       run: ./gradlew test
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
     - name: Run integration tests
       run: ./gradlew integrationTest
@@ -136,4 +138,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # Needed for integration tests in coverage
       run: ./gradlew build sonar --info
