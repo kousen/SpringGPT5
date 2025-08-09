@@ -7,8 +7,11 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class Gpt5NativeClient {
@@ -72,60 +75,75 @@ public class Gpt5NativeClient {
 
     // ----- tiny tree helpers -----
     private static String firstText(JsonNode root, String... pointers) {
-        for (String p : pointers) {
-            JsonNode n = root.at(p);
-            if (n != null && !n.isMissingNode() && !n.isNull()) return n.asText();
-        }
-        return null;
+        return Arrays.stream(pointers)
+                .map(p -> root.at(p))
+                .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
+                .findFirst()
+                .map(n -> n.asText())
+                .orElse(null);
     }
 
     private static JsonNode firstNode(JsonNode root, String... pointers) {
-        for (String p : pointers) {
-            JsonNode n = root.at(p);
-            if (n != null && !n.isMissingNode() && !n.isNull()) return n;
-        }
-        return null;
+        return Arrays.stream(pointers)
+                .map(p -> root.at(p))
+                .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
+                .findFirst()
+                .orElse(null);
     }
 
     private static String text(JsonNode node, String pointer) {
-        if (node == null) return null;
-        JsonNode n = node.at(pointer);
-        return (n == null || n.isMissingNode() || n.isNull()) ? null : n.asText();
+        return Optional.ofNullable(node)
+                .map(n -> n.at(pointer))
+                .filter(n -> !n.isMissingNode() && !n.isNull())
+                .map(n -> n.asText())
+                .orElse(null);
     }
 
     private static Integer intOrNull(JsonNode root, String pointer) {
-        JsonNode n = root.at(pointer);
-        return (n == null || n.isMissingNode() || n.isNull()) ? null : n.asInt();
+        return Optional.ofNullable(root.at(pointer))
+                .filter(n -> !n.isMissingNode() && !n.isNull())
+                .map(n -> n.asInt())
+                .orElse(null);
     }
 
     /** Return the assistant's plain text, if any, from a Responses API payload. */
     static String extractText(JsonNode resp) {
-        // 1) Fast path if OpenAI ever includes a top-level output_text for Java
-        JsonNode direct = resp.get("output_text");
-        if (direct != null && !direct.isNull()) return direct.asText();
+        // 1) Fast path if OpenAI ever includes a top-level output_text
+        return Optional.ofNullable(resp.get("output_text"))
+                .filter(node -> !node.isNull())
+                .map(JsonNode::asText)
+                .or(() -> extractFromOutputArray(resp))
+                .or(() -> extractFromFallbackPaths(resp))
+                .orElse(null);
+    }
 
-        // 2) Walk the output array -> find message items -> gather output_text chunks
-        JsonNode out = resp.get("output");
-        if (out != null && out.isArray()) {
-            StringBuilder sb = new StringBuilder();
-            for (JsonNode item : out) {
-                if ("message".equals(item.path("type").asText())) {
-                    for (JsonNode c : item.path("content")) {
-                        if ("output_text".equals(c.path("type").asText())) {
-                            String t = c.path("text").asText(null);
-                            if (t != null) sb.append(t);
+    private static Optional<String> extractFromOutputArray(JsonNode resp) {
+        return Optional.ofNullable(resp.get("output"))
+                .filter(JsonNode::isArray)
+                .map(outputArray -> {
+                    StringBuilder sb = new StringBuilder();
+                    outputArray.forEach(item -> {
+                        String itemType = item.path("type").asText();
+                        if ("message".equals(itemType)) {
+                            item.path("content").forEach(content -> {
+                                String contentType = content.path("type").asText();
+                                if ("output_text".equals(contentType)) {
+                                    String text = content.path("text").asText(null);
+                                    if (text != null) sb.append(text);
+                                }
+                            });
                         }
-                    }
-                }
-            }
-            if (!sb.isEmpty()) return sb.toString();
-        }
+                    });
+                    return sb.isEmpty() ? null : sb.toString();
+                })
+                .filter(Objects::nonNull);
+    }
 
-        // 3) Conservative fallback for odd shapes
-        return firstText(resp,
+    private static Optional<String> extractFromFallbackPaths(JsonNode resp) {
+        return Optional.ofNullable(firstText(resp,
                 "/output/0/content/0/text",
                 "/response/0/content/0/text"
-        );
+        ));
     }
 
     /** Convenience call: send prompt, return just the text (null if none). */

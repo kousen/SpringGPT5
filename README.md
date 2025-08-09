@@ -178,3 +178,53 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - JUnit 5
 - AssertJ
 - JaCoCo (code coverage)
+
+## Java 21 Features Showcase
+
+This project demonstrates modern Java 21 features:
+
+### Records (Java 14+)
+```java
+public record Result(
+    String text,
+    String reasoningEffort,
+    String reasoningTrace,
+    Integer inputTokens,
+    Integer outputTokens,
+    JsonNode raw
+) {}
+```
+
+### Text Blocks (Java 15+)
+```java
+String body = """
+        {
+          "model": "%s",
+          "input": %s,
+          "reasoning": { "effort": %s }
+        }
+        """.formatted(model, messagesJson, effortJson);
+```
+
+### Optional Chaining & Streams
+```java
+return Optional.ofNullable(resp.get("output_text"))
+        .filter(node -> !node.isNull())
+        .map(JsonNode::asText)
+        .or(() -> extractFromOutputArray(resp))
+        .or(() -> extractFromFallbackPaths(resp))
+        .orElse(null);
+```
+
+### Enhanced Stream Processing
+```java
+return Arrays.stream(pointers)
+        .map(p -> root.at(p))
+        .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
+        .findFirst()
+        .map(n -> n.asText())
+        .orElse(null);
+```
+
+### Modern Exception Handling
+Uses functional programming patterns with Optional for null-safe operations instead of traditional null checks.

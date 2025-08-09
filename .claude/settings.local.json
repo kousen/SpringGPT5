@@ -5,7 +5,8 @@
       "Bash(mkdir:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": []
   }
