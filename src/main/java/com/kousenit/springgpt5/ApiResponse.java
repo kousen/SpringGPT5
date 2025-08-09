@@ -40,13 +40,13 @@ public sealed interface ApiResponse
     ) implements ApiResponse {}
 
     /**
-     * Extract the raw JSON from any response type using pattern matching
+     * Extract the raw JSON from any response type
      */
     default JsonNode getRawJson() {
         return switch (this) {
-            case Success(var text, var effort, var trace, var input, var output, var raw) -> raw;
-            case Error(var message, var code, var raw) -> raw;
-            case Partial(var availableText, var reason, var raw) -> raw;
+            case Success success -> success.raw();
+            case Error error -> error.raw();
+            case Partial partial -> partial.raw();
         };
     }
 
