@@ -106,9 +106,9 @@ class Gpt5NativeClientTest {
     }
 
     @Test
-    void shouldTestResultRecord() {
+    void shouldTestApiResponseSuccess() {
         JsonNode rawNode = mapper.createObjectNode();
-        Gpt5NativeClient.Result result = new Gpt5NativeClient.Result(
+        ApiResponse response = new ApiResponse.Success(
                 "test response",
                 "medium",
                 "reasoning trace here",
@@ -117,53 +117,60 @@ class Gpt5NativeClientTest {
                 rawNode
         );
 
-        assertEquals("test response", result.text());
-        assertEquals("medium", result.reasoningEffort());
-        assertEquals("reasoning trace here", result.reasoningTrace());
-        assertEquals(Integer.valueOf(100), result.inputTokens());
-        assertEquals(Integer.valueOf(50), result.outputTokens());
-        assertEquals(rawNode, result.raw());
+        if (response instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
+            assertEquals("test response", text);
+            assertEquals("medium", effort);
+            assertEquals("reasoning trace here", trace);
+            assertEquals(Integer.valueOf(100), input);
+            assertEquals(Integer.valueOf(50), output);
+            assertEquals(rawNode, raw);
+        } else {
+            fail("Expected Success response");
+        }
     }
 
     @Test
-    void shouldTestResultRecordWithNulls() {
-        Gpt5NativeClient.Result result = new Gpt5NativeClient.Result(
+    void shouldTestApiResponseWithNulls() {
+        ApiResponse response = new ApiResponse.Success(
                 null, null, null, null, null, null
         );
 
-        assertNull(result.text());
-        assertNull(result.reasoningEffort());
-        assertNull(result.reasoningTrace());
-        assertNull(result.inputTokens());
-        assertNull(result.outputTokens());
-        assertNull(result.raw());
+        if (response instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
+            assertNull(text);
+            assertNull(effort);
+            assertNull(trace);
+            assertNull(input);
+            assertNull(output);
+            assertNull(raw);
+        } else {
+            fail("Expected Success response");
+        }
     }
 
     @Test
-    void shouldTestResultRecordEquality() {
+    void shouldTestApiResponseEquality() {
         JsonNode rawNode = mapper.createObjectNode();
-        Gpt5NativeClient.Result result1 = new Gpt5NativeClient.Result(
+        ApiResponse response1 = new ApiResponse.Success(
                 "test", "medium", "trace", 100, 50, rawNode
         );
-        Gpt5NativeClient.Result result2 = new Gpt5NativeClient.Result(
+        ApiResponse response2 = new ApiResponse.Success(
                 "test", "medium", "trace", 100, 50, rawNode
         );
 
-        assertEquals(result1, result2);
-        assertEquals(result1.hashCode(), result2.hashCode());
-        assertThat(result1.toString()).contains("test", "medium", "trace");
+        assertEquals(response1, response2);
+        assertEquals(response1.hashCode(), response2.hashCode());
+        assertThat(response1.toString()).contains("test", "medium", "trace");
     }
 
     @Test
-    void shouldConvertResultToApiResponseUsingRecordPatterns() {
+    void shouldCreateSuccessResponseUsingRecordPatterns() {
         JsonNode rawNode = mapper.createObjectNode();
         
-        // Test successful conversion
-        var successResult = new Gpt5NativeClient.Result(
+        // Test direct Success creation
+        var apiResponse = new ApiResponse.Success(
                 "Hello, World!", "medium", "trace", 100, 50, rawNode
         );
         
-        var apiResponse = successResult.toApiResponse();
         assertThat(apiResponse).isInstanceOf(ApiResponse.Success.class);
         
         if (apiResponse instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
@@ -178,14 +185,14 @@ class Gpt5NativeClientTest {
     }
 
     @Test
-    void shouldHandleEmptyResultAsPartial() {
+    void shouldHandlePartialResponse() {
         JsonNode rawNode = mapper.createObjectNode();
         
-        var emptyResult = new Gpt5NativeClient.Result(
-                "", "low", "trace", 10, 5, rawNode
+        // Create as generic ApiResponse to allow pattern matching
+        ApiResponse apiResponse = new ApiResponse.Partial(
+                "", "Incomplete response", rawNode
         );
         
-        var apiResponse = emptyResult.toApiResponse();
         assertThat(apiResponse).isInstanceOf(ApiResponse.Partial.class);
         
         // Test pattern matching on sealed interface

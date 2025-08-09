@@ -60,20 +60,30 @@ String response = service.normalAnswer("Explain quantum computing");
 ### GPT-5 Reasoning API
 ```java
 // With default medium effort
-Gpt5NativeClient.Result result = service.gpt5ReasoningAnswer(
+ApiResponse response = service.gpt5ReasoningAnswer(
     "Explain the benefits of functional programming"
 );
 
 // With custom effort level
-Gpt5NativeClient.Result result = service.gpt5ReasoningAnswer(
+ApiResponse response = service.gpt5ReasoningAnswer(
     "Solve this complex problem", 
     ReasoningEffort.HIGH
 );
 
-// Access reasoning trace
-String reasoning = result.reasoningTrace();
-String effort = result.reasoningEffort();
-Integer tokens = result.inputTokens();
+// Pattern matching for safe access
+switch (response) {
+    case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> {
+        System.out.println("Response: " + text);
+        System.out.println("Tokens used: " + (input + output));
+        System.out.println("Effort: " + effort);
+    }
+    case ApiResponse.Error(var message, var code, var raw) -> {
+        System.err.println("Error: " + message);
+    }
+    case ApiResponse.Partial(var availableText, var reason, var raw) -> {
+        System.out.println("Partial: " + availableText);
+    }
+}
 ```
 
 ## Testing
@@ -146,17 +156,27 @@ Add your OpenAI API key as a repository secret:
 
 ## API Response Structure
 
-The native client returns structured results:
+The native client returns type-safe sealed interface responses:
 ```java
-public record Result(
-    String text,              // Generated response text
-    String reasoningEffort,   // Actual effort level used
-    String reasoningTrace,    // Reasoning process trace
-    Integer inputTokens,      // Input token count
-    Integer outputTokens,     // Output token count
-    JsonNode raw             // Raw API response
-) {}
+public sealed interface ApiResponse 
+        permits ApiResponse.Success, ApiResponse.Error, ApiResponse.Partial {
+    
+    record Success(String text, String reasoningEffort, String reasoningTrace, 
+                   Integer inputTokens, Integer outputTokens, JsonNode raw) 
+                   implements ApiResponse {}
+    
+    record Error(String message, String code, JsonNode raw) 
+                 implements ApiResponse {}
+    
+    record Partial(String availableText, String reason, JsonNode raw) 
+                   implements ApiResponse {}
+}
 ```
+
+This provides:
+- **Type Safety**: Compiler ensures all response types are handled
+- **Pattern Matching**: Use switch expressions for elegant response processing  
+- **Exhaustiveness**: No runtime surprises from unhandled cases
 
 ## License
 

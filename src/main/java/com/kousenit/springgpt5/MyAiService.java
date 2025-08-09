@@ -17,30 +17,16 @@ class MyAiService {
         return chat.prompt(prompt).call().content();
     }
 
-    public Gpt5NativeClient.Result gpt5ReasoningAnswer(String prompt) throws Exception {
+    public ApiResponse gpt5ReasoningAnswer(String prompt) throws Exception {
         return gpt5.chatWithReasoning(prompt, ReasoningEffort.MEDIUM);
     }
 
-    public Gpt5NativeClient.Result gpt5ReasoningAnswer(String prompt, ReasoningEffort effort) throws Exception {
+    public ApiResponse gpt5ReasoningAnswer(String prompt, ReasoningEffort effort) throws Exception {
         return gpt5.chatWithReasoning(prompt, effort);
     }
 
     public String gpt5TextAnswer(String prompt, ReasoningEffort effort) throws Exception {
         return gpt5.chatText(prompt, effort);
-    }
-
-    /**
-     * Modern approach using sealed interfaces and pattern matching
-     */
-    public ApiResponse gpt5ModernResponse(String prompt) throws Exception {
-        return gpt5ModernResponse(prompt, ReasoningEffort.MEDIUM);
-    }
-
-    /**
-     * Modern approach with custom effort level
-     */
-    public ApiResponse gpt5ModernResponse(String prompt, ReasoningEffort effort) throws Exception {
-        return gpt5.chatWithReasoningModern(prompt, effort);
     }
 
     /**

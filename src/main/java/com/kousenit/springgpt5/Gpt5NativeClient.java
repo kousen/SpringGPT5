@@ -29,7 +29,7 @@ public class Gpt5NativeClient {
     /**
      * Quick single-message call with a reasoning knob.
      */
-    public Result chatWithReasoning(String userPrompt, ReasoningEffort effort) throws Exception {
+    public ApiResponse chatWithReasoning(String userPrompt, ReasoningEffort effort) throws Exception {
         var messages = List.of(Map.of("role", "user", "content", userPrompt));
         return send(messages, effort);
     }
@@ -37,13 +37,11 @@ public class Gpt5NativeClient {
     /**
      * Multi-message variant (roles already user/system/assistant).
      */
-    public Result send(List<Map<String, String>> messages, ReasoningEffort effort) throws Exception {
-        // Build dynamic bits with Jackson so newlines/quotes are escaped
-        String messagesJson = mapper.writeValueAsString(messages);
-        String effortJson = mapper.writeValueAsString(effort.getValue());
+    public ApiResponse send(List<Map<String, String>> messages, ReasoningEffort effort) throws Exception {
+        var messagesJson = mapper.writeValueAsString(messages);
+        var effortJson = mapper.writeValueAsString(effort.getValue());
 
-        // Readable request template; plug in the JSON fragments safely with %s
-        String body = """
+        var body = """
                 {
                   "model": "%s",
                   "input": %s,
@@ -51,26 +49,14 @@ public class Gpt5NativeClient {
                 }
                 """.formatted(model, messagesJson, effortJson);
 
-        JsonNode resp = rc.post()
+        var resp = rc.post()
                 .uri("/responses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
 
-        // Prefer output_text when available; otherwise fall back to common shapes
-        assert resp != null;
-        String text = extractText(resp);
-
-        JsonNode reasoning = firstNode(resp, "/reasoning", "/meta/reasoning");
-        String reasoningEffort = text(reasoning, "/effort");
-        String reasoningTrace = text(reasoning, "/trace");
-
-        // (Optional) common metrics if present
-        Integer inputTokens = intOrNull(resp, "/usage/input_tokens");
-        Integer outputTokens = intOrNull(resp, "/usage/output_tokens");
-
-        return new Result(text, reasoningEffort, reasoningTrace, inputTokens, outputTokens, resp);
+        return parseApiResponse(resp);
     }
 
     // ----- tiny tree helpers -----
@@ -106,84 +92,16 @@ public class Gpt5NativeClient {
                 .orElse(null);
     }
 
-    /** Return the assistant's plain text, if any, from a Responses API payload. */
-    static String extractText(JsonNode resp) {
-        // 1) Fast path if OpenAI ever includes a top-level output_text
-        return Optional.ofNullable(resp.get("output_text"))
-                .filter(node -> !node.isNull())
-                .map(JsonNode::asText)
-                .or(() -> extractFromOutputArray(resp))
-                .or(() -> extractFromFallbackPaths(resp))
-                .orElse(null);
-    }
-
-    private static Optional<String> extractFromOutputArray(JsonNode resp) {
-        return Optional.ofNullable(resp.get("output"))
-                .filter(JsonNode::isArray)
-                .map(outputArray -> {
-                    StringBuilder sb = new StringBuilder();
-                    outputArray.forEach(item -> {
-                        String itemType = item.path("type").asText();
-                        if ("message".equals(itemType)) {
-                            item.path("content").forEach(content -> {
-                                String contentType = content.path("type").asText();
-                                if ("output_text".equals(contentType)) {
-                                    String text = content.path("text").asText(null);
-                                    if (text != null) sb.append(text);
-                                }
-                            });
-                        }
-                    });
-                    return sb.isEmpty() ? null : sb.toString();
-                })
-                .filter(Objects::nonNull);
-    }
-
-    private static Optional<String> extractFromFallbackPaths(JsonNode resp) {
-        return Optional.ofNullable(firstText(resp,
-                "/output/0/content/0/text",
-                "/response/0/content/0/text"
-        ));
-    }
-
     /** Convenience call: send prompt, return just the text (null if none). */
     public String chatText(String userPrompt, ReasoningEffort effort) throws Exception {
-        var res = chatWithReasoning(userPrompt, effort);
-        return res.text(); // now filled via extractText(...)
+        var response = chatWithReasoning(userPrompt, effort);
+        return switch (response) {
+            case ApiResponse.Success success -> success.text();
+            case ApiResponse.Error error -> null;
+            case ApiResponse.Partial partial -> partial.availableText();
+        };
     }
 
-    /**
-     * Modern pattern matching approach returning sealed ApiResponse types
-     */
-    public ApiResponse chatWithReasoningModern(String userPrompt, ReasoningEffort effort) throws Exception {
-        var messages = List.of(Map.of("role", "user", "content", userPrompt));
-        return sendModern(messages, effort);
-    }
-
-    /**
-     * Enhanced send method using pattern matching and sealed interfaces
-     */
-    public ApiResponse sendModern(List<Map<String, String>> messages, ReasoningEffort effort) throws Exception {
-        var messagesJson = mapper.writeValueAsString(messages);
-        var effortJson = mapper.writeValueAsString(effort.getValue());
-
-        var body = """
-                {
-                  "model": "%s",
-                  "input": %s,
-                  "reasoning": { "effort": %s }
-                }
-                """.formatted(model, messagesJson, effortJson);
-
-        var resp = rc.post()
-                .uri("/responses")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
-
-        return parseApiResponse(resp);
-    }
 
     /**
      * Parse API response using advanced pattern matching features
@@ -197,8 +115,8 @@ public class Gpt5NativeClient {
             return new ApiResponse.Error(message, code, resp);
         }
 
-        // Extract text using our existing method
-        var text = extractTextModern(resp);
+        // Extract text using pattern matching
+        var text = extractText(resp);
         
         if (text == null || text.isEmpty()) {
             return new ApiResponse.Partial("", "No text content available", resp);
@@ -216,9 +134,9 @@ public class Gpt5NativeClient {
     }
 
     /**
-     * Modern text extraction using pattern matching for switch
+     * Extract text from API response using pattern matching for switch
      */
-    private static String extractTextModern(JsonNode resp) {
+    static String extractText(JsonNode resp) {
         // Fast path with pattern matching instanceof
         if (resp instanceof JsonNode directNode && directNode.has("output_text")) {
             var outputText = directNode.get("output_text");
@@ -291,32 +209,4 @@ public class Gpt5NativeClient {
         }
     }
 
-    /**
-     * Result holder that keeps raw JSON for anything new the API adds.
-     * 
-     * @deprecated Use {@link ApiResponse} sealed interface for better type safety
-     */
-    @Deprecated(since = "1.0", forRemoval = true)
-    public record Result(
-            String text,
-            String reasoningEffort,
-            String reasoningTrace,
-            Integer inputTokens,
-            Integer outputTokens,
-            JsonNode raw
-    ) {
-        /**
-         * Convert to modern ApiResponse using record pattern matching
-         */
-        public ApiResponse toApiResponse() {
-            // Use this.text() to avoid pattern variable shadowing
-            if (this.text() != null && !this.text().isEmpty()) {
-                return new ApiResponse.Success(this.text(), this.reasoningEffort(), 
-                    this.reasoningTrace(), this.inputTokens(), this.outputTokens(), this.raw());
-            } else {
-                return new ApiResponse.Partial(this.text() != null ? this.text() : "", 
-                    "Incomplete result", this.raw());
-            }
-        }
-    }
 }
