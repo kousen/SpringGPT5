@@ -3,6 +3,11 @@ package com.kousenit.springgpt5;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,21 +18,33 @@ class Gpt5NativeClientTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Test
-    void shouldExtractTextFromDirectOutputText() throws Exception {
-        String json = """
+    @ParameterizedTest
+    @MethodSource("textExtractionTestCases")
+    void shouldExtractTextFromVariousJsonStructures(String testName, String json, String expectedResult) throws Exception {
+        JsonNode node = mapper.readTree(json);
+        String result = Gpt5NativeClient.extractText(node);
+        
+        if (expectedResult == null) {
+            assertNull(result, testName);
+        } else {
+            assertEquals(expectedResult, result, testName);
+        }
+    }
+
+    static Stream<Arguments> textExtractionTestCases() {
+        return Stream.of(
+            Arguments.of(
+                "Direct output_text field",
+                """
                 {
                   "output_text": "This is the direct response"
                 }
-                """;
-        JsonNode node = mapper.readTree(json);
-        String result = Gpt5NativeClient.extractText(node);
-        assertEquals("This is the direct response", result);
-    }
-
-    @Test
-    void shouldExtractTextFromOutputArray() throws Exception {
-        String json = """
+                """,
+                "This is the direct response"
+            ),
+            Arguments.of(
+                "Output array with message content",
+                """
                 {
                   "output": [
                     {
@@ -41,15 +58,12 @@ class Gpt5NativeClientTest {
                     }
                   ]
                 }
-                """;
-        JsonNode node = mapper.readTree(json);
-        String result = Gpt5NativeClient.extractText(node);
-        assertEquals("Response from output array", result);
-    }
-
-    @Test
-    void shouldExtractTextFromMultipleContentItems() throws Exception {
-        String json = """
+                """,
+                "Response from output array"
+            ),
+            Arguments.of(
+                "Multiple content items concatenated",
+                """
                 {
                   "output": [
                     {
@@ -67,27 +81,12 @@ class Gpt5NativeClientTest {
                     }
                   ]
                 }
-                """;
-        JsonNode node = mapper.readTree(json);
-        String result = Gpt5NativeClient.extractText(node);
-        assertEquals("First part Second part", result);
-    }
-
-    @Test
-    void shouldReturnNullForEmptyResponse() throws Exception {
-        String json = """
-                {
-                  "status": "completed"
-                }
-                """;
-        JsonNode node = mapper.readTree(json);
-        String result = Gpt5NativeClient.extractText(node);
-        assertNull(result);
-    }
-
-    @Test
-    void shouldUseFallbackPaths() throws Exception {
-        String json = """
+                """,
+                "First part Second part"
+            ),
+            Arguments.of(
+                "Fallback path without type field",
+                """
                 {
                   "output": [
                     {
@@ -99,10 +98,19 @@ class Gpt5NativeClientTest {
                     }
                   ]
                 }
-                """;
-        JsonNode node = mapper.readTree(json);
-        String result = Gpt5NativeClient.extractText(node);
-        assertEquals("Fallback text", result);
+                """,
+                "Fallback text"
+            ),
+            Arguments.of(
+                "Empty response returns null",
+                """
+                {
+                  "status": "completed"
+                }
+                """,
+                null
+            )
+        );
     }
 
     @Test
