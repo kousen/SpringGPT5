@@ -17,15 +17,15 @@ class MyAiService {
         return chat.prompt(prompt).call().content();
     }
 
-    public ApiResponse gpt5ReasoningAnswer(String prompt) throws Exception {
+    public ApiResponse gpt5ReasoningAnswer(String prompt) throws OpenAiClientException {
         return gpt5.chatWithReasoning(prompt, ReasoningEffort.MEDIUM);
     }
 
-    public ApiResponse gpt5ReasoningAnswer(String prompt, ReasoningEffort effort) throws Exception {
+    public ApiResponse gpt5ReasoningAnswer(String prompt, ReasoningEffort effort) throws OpenAiClientException {
         return gpt5.chatWithReasoning(prompt, effort);
     }
 
-    public String gpt5TextAnswer(String prompt, ReasoningEffort effort) throws Exception {
+    public String gpt5TextAnswer(String prompt, ReasoningEffort effort) throws OpenAiClientException {
         return gpt5.chatText(prompt, effort);
     }
 
@@ -37,8 +37,10 @@ class MyAiService {
 
         return switch (response) {
             case ApiResponse.Success success -> {
-                var tokenCount = (success.inputTokens() != null ? success.inputTokens() : 0) +
-                               (success.outputTokens() != null ? success.outputTokens() : 0);
+                // Handle potential null values for backwards compatibility
+                var inputTokens = success.inputTokens() != null ? success.inputTokens() : 0;
+                var outputTokens = success.outputTokens() != null ? success.outputTokens() : 0;
+                var tokenCount = inputTokens + outputTokens;
                 yield new ResponseSummary(
                     new ResponseSummary.SUCCESS(),
                     success.text().length(),

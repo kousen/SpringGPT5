@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +12,7 @@ import org.springframework.web.client.RestClient;
 @Configuration
 class AiClientsConfig {
     @Bean
-    ChatClient gpt5ChatClient(@Autowired OpenAiChatModel model) {
+    ChatClient gpt5ChatClient(OpenAiChatModel model) {
         return ChatClient.create(model);
     }
 

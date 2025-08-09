@@ -28,7 +28,7 @@ public class Gpt5NativeClient {
     /**
      * Quick single-message call with a reasoning knob.
      */
-    public ApiResponse chatWithReasoning(String userPrompt, ReasoningEffort effort) throws Exception {
+    public ApiResponse chatWithReasoning(String userPrompt, ReasoningEffort effort) throws OpenAiClientException {
         var messages = List.of(Map.of("role", "user", "content", userPrompt));
         return send(messages, effort);
     }
@@ -36,26 +36,30 @@ public class Gpt5NativeClient {
     /**
      * Multi-message variant (roles already user/system/assistant).
      */
-    public ApiResponse send(List<Map<String, String>> messages, ReasoningEffort effort) throws Exception {
-        var messagesJson = mapper.writeValueAsString(messages);
-        var effortJson = mapper.writeValueAsString(effort.getValue());
+    public ApiResponse send(List<Map<String, String>> messages, ReasoningEffort effort) throws OpenAiClientException {
+        try {
+            var messagesJson = mapper.writeValueAsString(messages);
+            var effortJson = mapper.writeValueAsString(effort.getValue());
 
-        var body = """
-                {
-                  "model": "%s",
-                  "input": %s,
-                  "reasoning": { "effort": %s }
-                }
-                """.formatted(model, messagesJson, effortJson);
+            var body = """
+                    {
+                      "model": "%s",
+                      "input": %s,
+                      "reasoning": { "effort": %s }
+                    }
+                    """.formatted(model, messagesJson, effortJson);
 
-        var resp = rc.post()
-                .uri("/responses")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
+            var resp = rc.post()
+                    .uri("/responses")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
 
-        return parseApiResponse(resp);
+            return parseApiResponse(resp);
+        } catch (Exception e) {
+            throw new OpenAiClientException("Failed to send request to OpenAI API", e);
+        }
     }
 
     // ----- tree helpers -----
@@ -88,7 +92,7 @@ public class Gpt5NativeClient {
     }
 
     /** Convenience call: send prompt, return just the text (null if none). */
-    public String chatText(String userPrompt, ReasoningEffort effort) throws Exception {
+    public String chatText(String userPrompt, ReasoningEffort effort) throws OpenAiClientException {
         var response = chatWithReasoning(userPrompt, effort);
         return switch (response) {
             case ApiResponse.Success success -> success.text();
