@@ -3,6 +3,7 @@ plugins {
     jacoco
     id("org.springframework.boot") version "3.5.4"
     id("io.spring.dependency-management") version "1.1.7"
+    id("org.sonarqube") version "6.2.0.5505"
 }
 
 group = "com.kousenit"
@@ -72,3 +73,13 @@ tasks.jacocoTestReport {
 jacoco {
     toolVersion = "0.8.13"
 }
+
+sonar {
+    properties {
+        property("sonar.projectKey", "kousen_SpringGPT5")
+        property("sonar.organization", "kousen-it-inc")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
+}
+
+
