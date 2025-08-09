@@ -76,16 +76,16 @@ public class Gpt5NativeClient {
     // ----- tiny tree helpers -----
     private static String firstText(JsonNode root, String... pointers) {
         return Arrays.stream(pointers)
-                .map(p -> root.at(p))
+                .map(root::at)
                 .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
                 .findFirst()
-                .map(n -> n.asText())
+                .map(JsonNode::asText)
                 .orElse(null);
     }
 
     private static JsonNode firstNode(JsonNode root, String... pointers) {
         return Arrays.stream(pointers)
-                .map(p -> root.at(p))
+                .map(root::at)
                 .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
                 .findFirst()
                 .orElse(null);
@@ -95,14 +95,14 @@ public class Gpt5NativeClient {
         return Optional.ofNullable(node)
                 .map(n -> n.at(pointer))
                 .filter(n -> !n.isMissingNode() && !n.isNull())
-                .map(n -> n.asText())
+                .map(JsonNode::asText)
                 .orElse(null);
     }
 
     private static Integer intOrNull(JsonNode root, String pointer) {
         return Optional.ofNullable(root.at(pointer))
                 .filter(n -> !n.isMissingNode() && !n.isNull())
-                .map(n -> n.asInt())
+                .map(JsonNode::asInt)
                 .orElse(null);
     }
 
@@ -296,7 +296,7 @@ public class Gpt5NativeClient {
      * 
      * @deprecated Use {@link ApiResponse} sealed interface for better type safety
      */
-    @Deprecated(since = "1.0", forRemoval = false)
+    @Deprecated(since = "1.0", forRemoval = true)
     public record Result(
             String text,
             String reasoningEffort,
@@ -309,13 +309,14 @@ public class Gpt5NativeClient {
          * Convert to modern ApiResponse using record pattern matching
          */
         public ApiResponse toApiResponse() {
-            return switch (this) {
-                case Result(var text, var effort, var trace, var input, var output, var raw) 
-                    when text != null && !text.isEmpty() -> 
-                        new ApiResponse.Success(text, effort, trace, input, output, raw);
-                case Result(var text, var effort, var trace, var input, var output, var raw) -> 
-                        new ApiResponse.Partial(text != null ? text : "", "Incomplete result", raw);
-            };
+            // Use this.text() to avoid pattern variable shadowing
+            if (this.text() != null && !this.text().isEmpty()) {
+                return new ApiResponse.Success(this.text(), this.reasoningEffort(), 
+                    this.reasoningTrace(), this.inputTokens(), this.outputTokens(), this.raw());
+            } else {
+                return new ApiResponse.Partial(this.text() != null ? this.text() : "", 
+                    "Incomplete result", this.raw());
+            }
         }
     }
 }
