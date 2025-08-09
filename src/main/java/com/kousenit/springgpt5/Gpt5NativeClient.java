@@ -59,36 +59,32 @@ public class Gpt5NativeClient {
     }
 
     // ----- tree helpers -----
-    private static String firstText(JsonNode root, String... pointers) {
+    private static Optional<String> firstText(JsonNode root, String... pointers) {
         return Arrays.stream(pointers)
                 .map(root::at)
                 .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
                 .findFirst()
-                .map(JsonNode::asText)
-                .orElse(null);
+                .map(JsonNode::asText);
     }
 
-    private static JsonNode firstNode(JsonNode root, String... pointers) {
+    private static Optional<JsonNode> firstNode(JsonNode root, String... pointers) {
         return Arrays.stream(pointers)
                 .map(root::at)
                 .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
-    private static String text(JsonNode node, String pointer) {
+    private static Optional<String> text(JsonNode node, String pointer) {
         return Optional.ofNullable(node)
                 .map(n -> n.at(pointer))
                 .filter(n -> !n.isMissingNode() && !n.isNull())
-                .map(JsonNode::asText)
-                .orElse(null);
+                .map(JsonNode::asText);
     }
 
-    private static Integer intOrNull(JsonNode root, String pointer) {
+    private static Optional<Integer> intValue(JsonNode root, String pointer) {
         return Optional.ofNullable(root.at(pointer))
                 .filter(n -> !n.isMissingNode() && !n.isNull())
-                .map(JsonNode::asInt)
-                .orElse(null);
+                .map(JsonNode::asInt);
     }
 
     /** Convenience call: send prompt, return just the text (null if none). */
@@ -121,13 +117,14 @@ public class Gpt5NativeClient {
             return new ApiResponse.Partial("", "No text content available", resp);
         }
 
-        // Extract metadata using pattern matching
+        // Extract metadata using Optional chain with meaningful defaults
         var reasoning = firstNode(resp, "/reasoning", "/meta/reasoning");
-        var reasoningEffort = reasoning != null ? text(reasoning, "/effort") : null;
-        var reasoningTrace = reasoning != null ? text(reasoning, "/trace") : null;
+        var reasoningEffort = reasoning.flatMap(r -> text(r, "/effort")).orElse("unknown");
+        var reasoningTrace = reasoning.flatMap(r -> text(r, "/trace")).orElse("");
         
-        var inputTokens = intOrNull(resp, "/usage/input_tokens");
-        var outputTokens = intOrNull(resp, "/usage/output_tokens");
+        // Keep as Integer for record compatibility, but use 0 as default instead of null
+        var inputTokens = intValue(resp, "/usage/input_tokens").orElse(0);
+        var outputTokens = intValue(resp, "/usage/output_tokens").orElse(0);
 
         return new ApiResponse.Success(text, reasoningEffort, reasoningTrace, inputTokens, outputTokens, resp);
     }
@@ -166,7 +163,7 @@ public class Gpt5NativeClient {
         return firstText(resp,
                 "/output/0/content/0/text",
                 "/response/0/content/0/text"
-        );
+        ).orElse(null);
     }
 
     /**

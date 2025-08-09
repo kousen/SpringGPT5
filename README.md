@@ -376,7 +376,7 @@ return Optional.ofNullable(resp.get("output_text"))
         .map(JsonNode::asText)
         .or(() -> extractFromOutputArray(resp))
         .or(() -> extractFromFallbackPaths(resp))
-        .orElse(null);
+        .orElse(""); // Empty string instead of null
 ```
 
 ### Benefits of These Features
