@@ -117,13 +117,13 @@ class Gpt5NativeClientTest {
                 rawNode
         );
 
-        if (response instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
-            assertEquals("test response", text);
-            assertEquals("medium", effort);
-            assertEquals("reasoning trace here", trace);
-            assertEquals(Integer.valueOf(100), input);
-            assertEquals(Integer.valueOf(50), output);
-            assertEquals(rawNode, raw);
+        if (response instanceof ApiResponse.Success success) {
+            assertEquals("test response", success.text());
+            assertEquals("medium", success.reasoningEffort());
+            assertEquals("reasoning trace here", success.reasoningTrace());
+            assertEquals(Integer.valueOf(100), success.inputTokens());
+            assertEquals(Integer.valueOf(50), success.outputTokens());
+            assertEquals(rawNode, success.raw());
         } else {
             fail("Expected Success response");
         }
@@ -135,13 +135,13 @@ class Gpt5NativeClientTest {
                 null, null, null, null, null, null
         );
 
-        if (response instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
-            assertNull(text);
-            assertNull(effort);
-            assertNull(trace);
-            assertNull(input);
-            assertNull(output);
-            assertNull(raw);
+        if (response instanceof ApiResponse.Success success) {
+            assertNull(success.text());
+            assertNull(success.reasoningEffort());
+            assertNull(success.reasoningTrace());
+            assertNull(success.inputTokens());
+            assertNull(success.outputTokens());
+            assertNull(success.raw());
         } else {
             fail("Expected Success response");
         }
@@ -173,12 +173,12 @@ class Gpt5NativeClientTest {
         
         assertThat(apiResponse).isInstanceOf(ApiResponse.Success.class);
         
-        if (apiResponse instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
-            assertEquals("Hello, World!", text);
-            assertEquals("medium", effort);
-            assertEquals("trace", trace);
-            assertEquals(Integer.valueOf(100), input);
-            assertEquals(Integer.valueOf(50), output);
+        if (apiResponse instanceof ApiResponse.Success success) {
+            assertEquals("Hello, World!", success.text());
+            assertEquals("medium", success.reasoningEffort());
+            assertEquals("trace", success.reasoningTrace());
+            assertEquals(Integer.valueOf(100), success.inputTokens());
+            assertEquals(Integer.valueOf(50), success.outputTokens());
         } else {
             fail("Expected Success response");
         }
@@ -206,7 +206,7 @@ class Gpt5NativeClientTest {
     }
 
     @Test
-    void shouldDemonstrateAdvancedJsonNodePatternMatching() throws Exception {
+    void shouldDemonstrateAdvancedJsonNodePatternMatching() {
         // Test different JsonNode types with pattern matching
         var objectNode = mapper.createObjectNode();
         objectNode.put("type", "message");
@@ -236,7 +236,7 @@ class Gpt5NativeClientTest {
     }
 
     @Test
-    void shouldTestSealedInterfaceExhaustiveness() throws Exception {
+    void shouldTestSealedInterfaceExhaustiveness() {
         var successResponse = new ApiResponse.Success(
                 "test", "medium", "trace", 100, 50, mapper.createObjectNode()
         );
@@ -255,9 +255,9 @@ class Gpt5NativeClientTest {
     
     private String extractContent(ApiResponse response) {
         return switch (response) {
-            case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> text;
-            case ApiResponse.Error(var message, var code, var raw) -> null;
-            case ApiResponse.Partial(var availableText, var reason, var raw) -> availableText;
+            case ApiResponse.Success success -> success.text();
+            case ApiResponse.Error ignored -> null;
+            case ApiResponse.Partial partial -> partial.availableText();
             // No default needed - sealed interface guarantees exhaustiveness
         };
     }
