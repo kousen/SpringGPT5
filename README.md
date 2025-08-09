@@ -8,7 +8,7 @@ A Spring Boot application demonstrating integration with OpenAI's GPT-5 model us
 - **GPT-5 Reasoning API**: Direct access to OpenAI's reasoning capabilities with configurable effort levels
 - **Type-Safe Configuration**: Uses `ReasoningEffort` enum for parameter validation
 - **Comprehensive Testing**: Integration tests for both Spring AI and native client approaches
-- **Modern Java**: Built with Java 24 and Spring Boot 3.5.4
+- **Modern Java**: Built with Java 21 and Spring Boot 3.5.4
 
 ## Architecture
 
@@ -179,11 +179,120 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - AssertJ
 - JaCoCo (code coverage)
 
-## Java 21 Features Showcase
+## Advanced Java 21 Features Showcase
 
-This project demonstrates modern Java 21 features:
+This project showcases cutting-edge Java 21 features for modern application development:
+
+### Sealed Interfaces (Java 17+)
+Type-safe API response modeling with exhaustive pattern matching:
+```java
+public sealed interface ApiResponse 
+        permits ApiResponse.Success, ApiResponse.Error, ApiResponse.Partial {
+    
+    record Success(String text, String reasoningEffort, String reasoningTrace, 
+                   Integer inputTokens, Integer outputTokens, JsonNode raw) 
+                   implements ApiResponse {}
+    record Error(String message, String code, JsonNode raw) 
+                 implements ApiResponse {}
+    record Partial(String availableText, String reason, JsonNode raw) 
+                   implements ApiResponse {}
+
+    // Default methods with pattern matching
+    default boolean isSuccess() {
+        return this instanceof Success;
+    }
+    
+    default String getTextContent() {
+        return switch (this) {
+            case Success(var text, var effort, var trace, var input, var output, var raw) -> text;
+            case Error(var message, var code, var raw) -> null;
+            case Partial(var availableText, var reason, var raw) -> availableText;
+        };
+    }
+}
+```
+
+### Pattern Matching for Switch (Java 17-21)
+Enhanced switch expressions with pattern matching:
+```java
+public String extractSafeContent(ApiResponse response) {
+    return switch (response) {
+        case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> text;
+        case ApiResponse.Error(var message, var code, var raw) -> null;
+        case ApiResponse.Partial(var availableText, var reason, var raw) -> availableText;
+    };
+}
+```
+
+### Record Pattern Matching with Guards (Java 19-21)
+Pattern matching with when clauses for advanced logic:
+```java
+private String classifyResponse(ApiResponse response) {
+    return switch (response) {
+        case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) 
+            when text.length() > 50 && "high".equals(effort) -> 
+                "Long successful response with high effort";
+        case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) 
+            when text.length() > 50 -> 
+                "Long successful response";
+        case ApiResponse.Success success -> "Short successful response";
+        case ApiResponse.Error error -> "Error response";
+        case ApiResponse.Partial partial -> "Partial response";
+    };
+}
+```
+
+### Pattern Matching with instanceof (Java 16+)
+Modern type checking and variable extraction:
+```java
+private String processJsonNode(JsonNode node) {
+    return switch (node) {
+        case JsonNode n when n.isObject() -> 
+            "Found object with type: " + n.path("type").asText("unknown");
+        case JsonNode n when n.isArray() -> 
+            "Found array with " + n.size() + " elements";
+        case JsonNode n when n.isTextual() -> 
+            "Found text: " + n.asText();
+        default -> "Unknown node type";
+    };
+}
+```
+
+### Enhanced var Usage (Java 10+21)
+Local variable type inference for complex generic types:
+```java
+// Complex generics made readable
+var responseMap = Map.of(
+    "success", new ApiResponse.Success("OK", "low", "trace", 10, 5, rawNode),
+    "error", new ApiResponse.Error("Failed", "400", rawNode)
+);
+
+var results = responseMap.entrySet().stream()
+    .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        entry -> entry.getValue().isSuccess()
+    ));
+```
+
+### Nested Sealed Interfaces
+Advanced type modeling with nested sealed hierarchies:
+```java
+public sealed interface ResponseSummary {
+    record SUCCESS() implements ResponseSummary {}
+    record ERROR() implements ResponseSummary {}
+    record PARTIAL() implements ResponseSummary {}
+}
+
+// Usage with pattern matching
+var statusType = switch (summary.status()) {
+    case SUCCESS success -> "success";
+    case ERROR error -> "error";
+    case PARTIAL partial -> "partial";
+};
+```
 
 ### Records (Java 14+)
+Immutable data carriers with automatic implementations:
 ```java
 public record Result(
     String text,
@@ -192,10 +301,21 @@ public record Result(
     Integer inputTokens,
     Integer outputTokens,
     JsonNode raw
-) {}
+) {
+    // Convert to sealed interface
+    public ApiResponse toApiResponse() {
+        if (text == null || text.isEmpty()) {
+            return new ApiResponse.Partial(text != null ? text : "", 
+                                           "Empty response", raw);
+        }
+        return new ApiResponse.Success(text, reasoningEffort, reasoningTrace, 
+                                       inputTokens, outputTokens, raw);
+    }
+}
 ```
 
 ### Text Blocks (Java 15+)
+Multiline string literals:
 ```java
 String body = """
         {
@@ -206,7 +326,8 @@ String body = """
         """.formatted(model, messagesJson, effortJson);
 ```
 
-### Optional Chaining & Streams
+### Functional Programming Patterns
+Modern Java idioms with Optional and Stream APIs:
 ```java
 return Optional.ofNullable(resp.get("output_text"))
         .filter(node -> !node.isNull())
@@ -216,15 +337,9 @@ return Optional.ofNullable(resp.get("output_text"))
         .orElse(null);
 ```
 
-### Enhanced Stream Processing
-```java
-return Arrays.stream(pointers)
-        .map(p -> root.at(p))
-        .filter(n -> n != null && !n.isMissingNode() && !n.isNull())
-        .findFirst()
-        .map(n -> n.asText())
-        .orElse(null);
-```
-
-### Modern Exception Handling
-Uses functional programming patterns with Optional for null-safe operations instead of traditional null checks.
+### Benefits of These Features
+- **Type Safety**: Sealed interfaces provide compile-time guarantees about all possible types
+- **Exhaustiveness**: Pattern matching ensures all cases are handled without runtime errors
+- **Readability**: Less boilerplate code and more expressive syntax
+- **Performance**: Some patterns can be optimized by the JVM
+- **Maintainability**: Changes to sealed hierarchies are caught at compile time

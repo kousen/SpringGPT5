@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class Gpt5NativeClientTest {
 
@@ -151,5 +152,106 @@ class Gpt5NativeClientTest {
         assertEquals(result1, result2);
         assertEquals(result1.hashCode(), result2.hashCode());
         assertThat(result1.toString()).contains("test", "medium", "trace");
+    }
+
+    @Test
+    void shouldConvertResultToApiResponseUsingRecordPatterns() {
+        JsonNode rawNode = mapper.createObjectNode();
+        
+        // Test successful conversion
+        var successResult = new Gpt5NativeClient.Result(
+                "Hello, World!", "medium", "trace", 100, 50, rawNode
+        );
+        
+        var apiResponse = successResult.toApiResponse();
+        assertThat(apiResponse).isInstanceOf(ApiResponse.Success.class);
+        
+        if (apiResponse instanceof ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw)) {
+            assertEquals("Hello, World!", text);
+            assertEquals("medium", effort);
+            assertEquals("trace", trace);
+            assertEquals(Integer.valueOf(100), input);
+            assertEquals(Integer.valueOf(50), output);
+        } else {
+            fail("Expected Success response");
+        }
+    }
+
+    @Test
+    void shouldHandleEmptyResultAsPartial() {
+        JsonNode rawNode = mapper.createObjectNode();
+        
+        var emptyResult = new Gpt5NativeClient.Result(
+                "", "low", "trace", 10, 5, rawNode
+        );
+        
+        var apiResponse = emptyResult.toApiResponse();
+        assertThat(apiResponse).isInstanceOf(ApiResponse.Partial.class);
+        
+        // Test pattern matching on sealed interface
+        var textContent = switch (apiResponse) {
+            case ApiResponse.Success success -> success.text();
+            case ApiResponse.Error error -> null;
+            case ApiResponse.Partial partial -> partial.availableText();
+        };
+        
+        assertEquals("", textContent);
+    }
+
+    @Test
+    void shouldDemonstrateAdvancedJsonNodePatternMatching() throws Exception {
+        // Test different JsonNode types with pattern matching
+        var objectNode = mapper.createObjectNode();
+        objectNode.put("type", "message");
+        
+        var arrayNode = mapper.createArrayNode();
+        arrayNode.add("item1");
+        arrayNode.add("item2");
+        
+        // Pattern matching with instanceof for JsonNode types
+        String result1 = processJsonNode(objectNode);
+        String result2 = processJsonNode(arrayNode);
+        
+        assertEquals("Found object with type: message", result1);
+        assertEquals("Found array with 2 elements", result2);
+    }
+    
+    private String processJsonNode(JsonNode node) {
+        return switch (node) {
+            case JsonNode n when n.isObject() -> 
+                "Found object with type: " + n.path("type").asText("unknown");
+            case JsonNode n when n.isArray() -> 
+                "Found array with " + n.size() + " elements";
+            case JsonNode n when n.isTextual() -> 
+                "Found text: " + n.asText();
+            default -> "Unknown node type";
+        };
+    }
+
+    @Test
+    void shouldTestSealedInterfaceExhaustiveness() throws Exception {
+        var successResponse = new ApiResponse.Success(
+                "test", "medium", "trace", 100, 50, mapper.createObjectNode()
+        );
+        var errorResponse = new ApiResponse.Error(
+                "API Error", "invalid_request", mapper.createObjectNode()
+        );
+        var partialResponse = new ApiResponse.Partial(
+                "partial text", "timeout", mapper.createObjectNode()
+        );
+        
+        // Test exhaustive pattern matching - compiler ensures all cases covered
+        assertEquals("test", extractContent(successResponse));
+        assertNull(extractContent(errorResponse));
+        assertEquals("partial text", extractContent(partialResponse));
+    }
+    
+    private String extractContent(ApiResponse response) {
+        return switch (response) {
+            case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> text;
+            case ApiResponse.Error(var message, var code, var raw) -> null;
+            case ApiResponse.Partial(var availableText, var reason, var raw) -> availableText;
+            // No default needed - sealed interface guarantees exhaustiveness
+        };
     }
 }
