@@ -61,7 +61,7 @@ tasks.register<Test>("allTests") {
 }
 
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")).include("**/*.exec"))
     reports {
         xml.required = true
         html.required = true
