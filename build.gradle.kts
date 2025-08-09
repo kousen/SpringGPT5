@@ -79,6 +79,11 @@ sonar {
         property("sonar.projectKey", "kousen_SpringGPT5")
         property("sonar.organization", "kousen-it-inc")
         property("sonar.host.url", "https://sonarcloud.io")
+        
+        // Disable string literal duplication rule - adds unnecessary complexity for small projects
+        property("sonar.issue.ignore.multicriteria", "e1")
+        property("sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S1192")
+        property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/*.java")
     }
 }
 
