@@ -227,15 +227,14 @@ class MyAiServiceUnitTest {
     
     @Test
     void shouldTestResponseSummaryRecordFeatures() {
-        // Test record equals, hashCode, and toString
+        // Test record equals, hashCode, and toString for same types
         var status1 = new MyAiService.ResponseSummary.SUCCESS();
         var status2 = new MyAiService.ResponseSummary.SUCCESS();
-        var errorStatus = new MyAiService.ResponseSummary.ERROR();
         
         assertEquals(status1, status2);
         assertEquals(status1.hashCode(), status2.hashCode());
-        assertNotEquals(status1, errorStatus);
         
+        // Test ResponseSummary record functionality
         var summary1 = new MyAiService.ResponseSummary(status1, 100, 50, "test");
         var summary2 = new MyAiService.ResponseSummary(status2, 100, 50, "test");
         var summary3 = new MyAiService.ResponseSummary(status1, 200, 50, "test");
@@ -243,5 +242,10 @@ class MyAiServiceUnitTest {
         assertEquals(summary1, summary2);
         assertNotEquals(summary1, summary3);
         assertThat(summary1.toString()).contains("100", "50", "test");
+        
+        // Test different status types separately
+        var errorStatus = new MyAiService.ResponseSummary.ERROR();
+        var partialStatus = new MyAiService.ResponseSummary.PARTIAL();
+        assertThat(errorStatus).isNotEqualTo(partialStatus);
     }
 }
