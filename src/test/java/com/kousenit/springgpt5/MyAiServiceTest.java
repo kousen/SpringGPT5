@@ -31,19 +31,17 @@ class MyAiServiceTest {
         assertNotNull(response);
         
         switch (response) {
-            case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> {
-                System.out.println(text);
-                System.out.println(input);
-                System.out.println(output);
-                System.out.println(effort);
-                assertTrue(text.contains("data-oriented programming"));
+            case ApiResponse.Success success -> {
+                System.out.println(success.text());
+                System.out.println(success.inputTokens());
+                System.out.println(success.outputTokens());
+                System.out.println(success.reasoningEffort());
+                assertTrue(success.text().contains("data-oriented programming"));
             }
-            case ApiResponse.Error(var message, var code, var raw) -> {
-                fail("Expected success but got error: " + message);
-            }
-            case ApiResponse.Partial(var availableText, var reason, var raw) -> {
-                fail("Expected success but got partial: " + reason);
-            }
+            case ApiResponse.Error error -> 
+                fail("Expected success but got error: " + error.message());
+            case ApiResponse.Partial partial -> 
+                fail("Expected success but got partial: " + partial.reason());
         }
     }
 
@@ -56,19 +54,17 @@ class MyAiServiceTest {
         assertNotNull(response);
         
         switch (response) {
-            case ApiResponse.Success(var text, var effort, var trace, var input, var output, var raw) -> {
-                System.out.println(text);
-                System.out.println("Input tokens: " + input);
-                System.out.println("Output tokens: " + output);
-                System.out.println("Effort: " + effort);
-                assertThat(text).containsIgnoringCase("data-oriented programming");
+            case ApiResponse.Success success -> {
+                System.out.println(success.text());
+                System.out.println("Input tokens: " + success.inputTokens());
+                System.out.println("Output tokens: " + success.outputTokens());
+                System.out.println("Effort: " + success.reasoningEffort());
+                assertThat(success.text()).containsIgnoringCase("data-oriented programming");
             }
-            case ApiResponse.Error(var message, var code, var raw) -> {
-                fail("Expected success but got error: " + message);
-            }
-            case ApiResponse.Partial(var availableText, var reason, var raw) -> {
-                fail("Expected success but got partial: " + reason);
-            }
+            case ApiResponse.Error error -> 
+                fail("Expected success but got error: " + error.message());
+            case ApiResponse.Partial partial -> 
+                fail("Expected success but got partial: " + partial.reason());
         }
     }
 
