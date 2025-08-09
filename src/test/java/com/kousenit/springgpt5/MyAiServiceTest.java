@@ -3,16 +3,18 @@ package com.kousenit.springgpt5;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class MyAiServiceTest {
     @Autowired
     private MyAiService service;
 
-    @Test
+    @SlowIntegrationTest
     void normalAnswer() {
         String answer = service.normalAnswer("""
                 What is the answer to life, the universe, and everything?
