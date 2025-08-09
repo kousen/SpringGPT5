@@ -17,7 +17,7 @@ public class Gpt5NativeClient {
     private final String model;
 
     public Gpt5NativeClient(RestClient openAiResponses, ObjectMapper mapper, 
-                           @Value("${openai.reasoning.model:gpt-5-nano}") String model) {
+                           @Value("${spring.ai.openai.chat.options.model:gpt-5-nano}") String model) {
         this.rc = openAiResponses;
         this.mapper = mapper;
         this.model = model;
