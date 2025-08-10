@@ -24,7 +24,7 @@ class AiClientsConfig {
 
     // Native client hits the Responses API directly
     @Bean
-    RestClient openAiRestClient(@Value("${openai.api.key}") String key) {
+    RestClient openAiRestClient(@Value("${spring.ai.openai.api-key}") String key) {
         return RestClient.builder()
                 .baseUrl("https://api.openai.com/v1")
                 .defaultHeader("Authorization", "Bearer " + key)
