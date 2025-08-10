@@ -862,7 +862,7 @@ Production-Ready GPT-5 Integration
 - 🔧 **Configuration**: Externalize API keys and model settings
 - 🚨 **Error Handling**: Implement robust retry and fallback mechanisms
 - 📊 **Monitoring**: Log reasoning effort levels for performance analysis
-- 🧪 **Testing**: 94% coverage with WireMock for HTTP testing
+- 🧪 **Testing**: 94% coverage with three-tier testing strategy (unit tests, WireMock, @RestClientTest)
 - 🔒 **Security**: Secure API key management and validation
 
 </v-clicks>
@@ -940,15 +940,15 @@ classDiagram
 
 <v-clicks>
 
-- 🚫 **@RestClientTest doesn't exist**: Only @RestTemplateTest exists in Spring Boot 3.x
-- ⚠️ **MockRestServiceServer limitation**: Only works with RestTemplate, not RestClient
-- 📚 **Documentation gap**: Spring Boot testing docs don't cover RestClient testing
-- ✅ **WireMock solution**: Real HTTP server testing for RestClient
-- 🎓 **Learning**: Sometimes framework limitations force better patterns
+- ✅ **@RestClientTest DOES exist**: Works with RestClient but requires field injection (@Autowired)
+- 🔄 **Three testing approaches**: Unit tests, WireMock HTTP server, Spring slice tests
+- 📚 **Documentation gap**: Spring Boot testing docs don't clearly explain RestClient slice testing
+- ✅ **WireMock solution**: Real HTTP server testing for comprehensive behavior validation
+- 🎓 **Learning**: Multiple testing strategies provide comprehensive coverage
 
 </v-clicks>
 
-**Key Insight**: When Spring doesn't provide slice tests, external mocking libraries like WireMock often provide superior testing approaches.
+**Key Insight**: Modern RestClient testing benefits from multiple approaches - Spring slice tests for integration validation and WireMock for comprehensive HTTP behavior testing.
 
 ---
 layout: section

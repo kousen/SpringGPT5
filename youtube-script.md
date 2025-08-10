@@ -43,7 +43,7 @@
 
 [Screen: GitHub repository overview]
 
-**"This isn't just another 'Hello World' AI demo. This is a production-ready application with 94% test coverage, zero SonarCloud issues, and comprehensive error handling. But here's what makes it special..."**
+**"This isn't just another 'Hello World' AI demo. This is a production-ready application with 94% test coverage, 24 passing tests, zero SonarCloud issues, and comprehensive error handling. But here's what makes it special..."**
 
 [Screen: Two side-by-side code files - MyAiService.java showing both approaches]
 
@@ -218,7 +218,7 @@ switch (itemType) {
 
 [Scene: Test file overview]
 
-**"Now, you might be thinking this dual approach makes testing complicated. Actually, it makes testing better. Let me show you the testing strategy."**
+**"Now, you might be thinking this dual approach makes testing complicated. Actually, it makes testing better. And here's something interesting - I discovered THREE different ways to test RestClient integration, each with its own strengths."**
 
 [Screen: MyAiServiceUnitTest.java]
 
@@ -259,11 +259,11 @@ void shouldHandleErrorResponseInReasoningAnswer() throws Exception {
 
 [Screen: Gpt5NativeClientUnitTest.java with WireMock setup]
 
-**"But here's something crucial about testing HTTP clients - I learned this the hard way. The Mockito team says 'don't mock what you don't own,' and that includes Spring's RestClient classes."**
+**"But here's where testing gets really interesting. I discovered three different approaches, and each one teaches us something important about RestClient testing."**
 
-[Screen: Before/after comparison showing complex mock chain vs WireMock]
+[Screen: Three test files side by side]
 
-**"I originally tried mocking RestClient with a 4-level mock chain - it was fragile, hard to maintain, and didn't actually test HTTP behavior. So I switched to WireMock, which runs a real HTTP server in tests."**
+**"First, there's WireMock for realistic HTTP behavior. The Mockito team says 'don't mock what you don't own,' so instead of mocking RestClient, WireMock runs a real HTTP server in tests."**
 
 ```java
 @BeforeEach
@@ -279,7 +279,28 @@ void setUp() {
 }
 ```
 
-**"Now we're testing real HTTP interactions, not mock objects. This boosted our native client coverage from 34% to 94% and gives us confidence that our HTTP handling actually works."**
+**"This gives us real HTTP behavior - timeouts, network errors, connection handling. Perfect for comprehensive scenario testing."**
+
+[Screen: Gpt5NativeClientSliceTest.java with @RestClientTest]
+
+**"But then I discovered something that completely surprised me. Spring Boot's @RestClientTest annotation actually DOES work with RestClient, contrary to what I initially thought."**
+
+```java
+@RestClientTest(Gpt5NativeClient.class)
+class Gpt5NativeClientSliceTest {
+    @Autowired
+    private MockRestServiceServer server;
+    
+    @Autowired
+    private Gpt5NativeClient client;
+}
+```
+
+**"The key was using field injection with @Autowired instead of constructor injection. This gives us Spring-native testing with MockRestServiceServer - lighter weight than WireMock but still validates request structure and Spring integration."**
+
+[Screen: Comparison showing three approaches]
+
+**"So now we have three complementary strategies: Mockito for service logic, WireMock for HTTP behavior, and @RestClientTest for Spring integration. Each serves a different purpose, and together they give us comprehensive coverage."**
 
 ---
 
@@ -295,7 +316,7 @@ void setUp() {
 
 [Screen: GitHub Actions workflow]
 
-**"Continuous integration with separate test categories - fast unit tests for development, slow integration tests for deployment. The pipeline uses GPT-5-nano for cost-effective testing."**
+**"Continuous integration with separate test categories - fast unit tests for development, slow integration tests for deployment. The pipeline uses GPT-5-nano for cost-effective testing. And with our three-tier testing strategy, we have confidence at every level - from service logic to HTTP behavior to Spring integration."**
 
 [Screen: Gradle configuration showing Java 21 features]
 

@@ -69,7 +69,8 @@ return switch (response) {
 src/test/java/com/kousenit/springgpt5/
 ├── MyAiServiceTest.java           # Spring integration test
 ├── MyAiServiceUnitTest.java       # Comprehensive unit tests (10 tests)
-├── Gpt5NativeClientUnitTest.java  # WireMock-based unit tests (9 tests)
+├── Gpt5NativeClientUnitTest.java  # WireMock-based unit tests (8 tests)
+├── Gpt5NativeClientSliceTest.java # Spring slice test with @RestClientTest (2 tests)
 ├── ReasoningEffortTest.java       # Enum validation tests
 ├── Gpt5Test.java                  # Integration test with real API
 └── SlowIntegrationTest.java       # Test categorization annotation
@@ -78,6 +79,7 @@ src/test/java/com/kousenit/springgpt5/
 ### Test Categories
 - **Unit Tests**: Fast, mocked dependencies
 - **Integration Tests**: Real Spring context
+- **Slice Tests**: Spring Boot test slices with MockRestServiceServer
 - **Slow Integration Tests**: Real OpenAI API calls (marked with `@SlowIntegrationTest`)
 - **Parameterized Tests**: Consolidated duplicate test logic
 
@@ -86,7 +88,28 @@ src/test/java/com/kousenit/springgpt5/
 - **ApiResponse**: 100% instruction coverage  
 - **ReasoningEffort**: 100% instruction coverage
 - **AiClientsConfig**: 100% instruction coverage
-- **Gpt5NativeClient**: 94% (improved with WireMock testing)
+- **Gpt5NativeClient**: 94% (improved with comprehensive testing)
+
+### Three-Tier Testing Strategy
+
+The project employs three complementary approaches for testing RestClient integration:
+
+#### 1. Unit Tests with Mockito (`MyAiServiceUnitTest`)
+- **Purpose**: Test service logic with mocked dependencies  
+- **Benefits**: Fast execution, focused on business logic
+- **Use case**: Validating service orchestration and error handling
+
+#### 2. WireMock HTTP Server Tests (`Gpt5NativeClientUnitTest`) 
+- **Purpose**: Test actual HTTP behavior without mocking Spring Framework classes
+- **Benefits**: Realistic network behavior, timeout testing, comprehensive scenario coverage
+- **Use case**: Validating HTTP client behavior, network error handling, JSON processing
+
+#### 3. Spring Slice Tests (`Gpt5NativeClientSliceTest`)
+- **Purpose**: Test Spring Boot integration with `@RestClientTest` and `MockRestServiceServer`
+- **Benefits**: Spring-native testing, request/response structure validation, faster than WireMock
+- **Use case**: Validating Spring Boot configuration, request formatting, basic integration
+
+**Key Discovery**: `@RestClientTest` works with `RestClient` but requires field injection with `@Autowired`, not constructor injection.
 
 ## 🔄 Development Evolution
 
@@ -175,13 +198,13 @@ For v1.0 release, removed Gradle dependency verification to resolve IDE sync iss
 - **Command-line builds** worked fine, but IDE integration failed
 - **Educational focus**: Simplified setup for learning purposes
 
-#### 6. WireMock Over Mocking Framework Classes (August 2025)
-Critical decision to eliminate Spring Framework class mocking:
-- **Problem**: Complex 4-level mock chain of RestClient fluent API
-- **Anti-pattern**: Violating "don't mock what you don't own" Mockito principle
-- **Research**: Discovered @RestClientTest doesn't exist for RestClient (only RestTemplate)
-- **Solution**: WireMock HTTP server mocking for realistic behavior testing
-- **Benefits**: True HTTP behavior validation, easier test maintenance, better coverage
+#### 6. RestClient Testing Strategy Evolution (August 2025)
+Multi-phase approach to finding the best RestClient testing patterns:
+- **Problem**: Complex 4-level mock chain of RestClient fluent API violating "don't mock what you don't own" principle
+- **Initial Solution**: WireMock HTTP server mocking for realistic behavior testing
+- **Discovery**: @RestClientTest DOES work with RestClient (contrary to initial research) but requires field injection with @Autowired
+- **Final Strategy**: Three complementary testing approaches for different needs
+- **Benefits**: Comprehensive testing options from lightweight slice tests to full HTTP behavior validation
 
 #### 7. SonarQube Rule Evolution Strategy (August 2025)
 Strategic approach to code quality rule management:
@@ -243,6 +266,8 @@ This project serves as a comprehensive example of:
 - **AssertJ** for fluent assertions
 - **Mockito** for clean unit testing
 - **WireMock** for HTTP service mocking
+- **@RestClientTest** for Spring-native slice testing
+- **Three-tier testing strategy** for comprehensive coverage
 
 ### Enterprise Practices
 - **CI/CD automation** with GitHub Actions
@@ -266,9 +291,10 @@ This project serves as a comprehensive example of:
 - **Security Status**: No vulnerabilities ✅
 
 ### Test Distribution
-- **Total Tests**: 22 across all test classes
+- **Total Tests**: 24 across all test classes
 - **MyAiServiceUnitTest**: 10 tests (comprehensive unit testing)
-- **Gpt5NativeClientUnitTest**: 9 tests (WireMock-based HTTP behavior testing)
+- **Gpt5NativeClientUnitTest**: 8 tests (WireMock-based HTTP behavior testing)
+- **Gpt5NativeClientSliceTest**: 2 tests (Spring slice testing with MockRestServiceServer)
 - **Integration Tests**: Real API calls for end-to-end validation
 
 ## 🚀 Usage & Configuration
