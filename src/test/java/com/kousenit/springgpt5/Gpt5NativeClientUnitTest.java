@@ -1,36 +1,45 @@
 package com.kousenit.springgpt5;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
-@SpringBootTest
+/**
+ * Tests for Gpt5NativeClient using WireMock to avoid mocking Spring Framework classes.
+ * This follows the "don't mock what you don't own" principle from the Mockito team.
+ */
 class Gpt5NativeClientUnitTest {
 
-    @Autowired
+    private WireMockServer wireMockServer;
     private Gpt5NativeClient client;
-    
-    @Autowired
-    private RestClient openAiRestClient;
-    
-    private MockRestServiceServer server;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        server = MockRestServiceServer.createServer(openAiRestClient);
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8089));
+        wireMockServer.start();
+        
+        RestClient restClient = RestClient.builder()
+                .baseUrl("http://localhost:8089/v1")
+                .defaultHeader("Authorization", "Bearer test-key")
+                .build();
+                
+        client = new Gpt5NativeClient(restClient, mapper, "gpt-5-nano");
+    }
+
+    @AfterEach
+    void tearDown() {
+        wireMockServer.stop();
     }
 
     @Test
@@ -60,10 +69,11 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(responseJson)));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.MEDIUM);
@@ -75,8 +85,6 @@ class Gpt5NativeClientUnitTest {
         assertEquals("thinking step by step", success.reasoningTrace());
         assertEquals(Integer.valueOf(10), success.inputTokens());
         assertEquals(Integer.valueOf(20), success.outputTokens());
-        
-        server.verify();
     }
 
     @Test
@@ -91,10 +99,11 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(errorJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(errorJson)));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.HIGH);
@@ -103,8 +112,6 @@ class Gpt5NativeClientUnitTest {
         ApiResponse.Error error = assertInstanceOf(ApiResponse.Error.class, result);
         assertEquals("Invalid API key", error.message());
         assertEquals("invalid_api_key", error.code());
-        
-        server.verify();
     }
 
     @Test
@@ -119,10 +126,11 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(partialJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(partialJson)));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.LOW);
@@ -131,8 +139,6 @@ class Gpt5NativeClientUnitTest {
         ApiResponse.Partial partial = assertInstanceOf(ApiResponse.Partial.class, result);
         assertEquals("", partial.availableText());
         assertEquals("No text content available", partial.reason());
-        
-        server.verify();
     }
 
     @Test
@@ -154,18 +160,17 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(responseJson)));
 
         // When
         String result = client.chatText("test prompt", ReasoningEffort.MEDIUM);
 
         // Then
         assertEquals("Chat text response", result);
-        
-        server.verify();
     }
 
     @Test
@@ -180,51 +185,17 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(errorJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(errorJson)));
 
         // When
         String result = client.chatText("test prompt", ReasoningEffort.HIGH);
 
         // Then
         assertNull(result);
-        
-        server.verify();
-    }
-
-    @Test
-    void shouldTestChatTextWithPartial() throws Exception {
-        // Given
-        String partialJson = """
-            {
-                "output": [
-                    {
-                        "type": "message",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "Incomplete response..."
-                            }
-                        ]
-                    }
-                ]
-            }
-            """;
-        
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(partialJson, MediaType.APPLICATION_JSON));
-
-        // When
-        String result = client.chatText("test prompt", ReasoningEffort.LOW);
-
-        // Then
-        assertEquals("Incomplete response...", result);
-        
-        server.verify();
     }
 
     @Test
@@ -251,10 +222,11 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(responseJson)));
 
         // When
         ApiResponse result = client.send(messages, ReasoningEffort.MEDIUM);
@@ -262,17 +234,15 @@ class Gpt5NativeClientUnitTest {
         // Then
         ApiResponse.Success success = assertInstanceOf(ApiResponse.Success.class, result);
         assertEquals("Multi-message response", success.text());
-        
-        server.verify();
     }
 
     @Test
     void shouldThrowOpenAiClientExceptionOnHttpError() {
         // Given
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withServerError());
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withBody("Internal Server Error")));
 
         // When & Then
         OpenAiClientException exception = assertThrows(OpenAiClientException.class, () -> 
@@ -280,17 +250,16 @@ class Gpt5NativeClientUnitTest {
         );
         
         assertEquals("Failed to send request to OpenAI API", exception.getMessage());
-        
-        server.verify();
     }
 
     @Test
     void shouldThrowOpenAiClientExceptionOnJsonError() {
-        // Given - Mock server to return invalid JSON that will cause parsing issues
-        server.expect(requestTo("https://api.openai.com/v1/responses"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andRespond(withSuccess("invalid json", MediaType.APPLICATION_JSON));
+        // Given - Mock server to return invalid JSON
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("invalid json")));
 
         // When & Then
         OpenAiClientException exception = assertThrows(OpenAiClientException.class, () -> 

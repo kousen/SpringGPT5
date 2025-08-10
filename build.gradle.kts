@@ -25,6 +25,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.wiremock:wiremock-standalone:3.9.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
