@@ -731,6 +731,46 @@ void shouldSummarizeSuccessResponse() {
 
 ---
 
+# WireMock HTTP Testing
+*"Don't Mock What You Don't Own"*
+
+```java {1-12|14-20|all}
+class Gpt5NativeClientUnitTest {
+    private WireMockServer wireMockServer;
+    private Gpt5NativeClient client;
+
+    @BeforeEach
+    void setUp() {
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8089));
+        wireMockServer.start();
+        
+        RestClient restClient = RestClient.builder()
+                .baseUrl("http://localhost:8089/v1")
+                .build();
+        client = new Gpt5NativeClient(restClient, mapper, "gpt-5-nano");
+    }
+
+    @Test
+    void shouldTestChatWithReasoningSuccess() {
+        wireMockServer.stubFor(post(urlEqualTo("/v1/responses"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(successJson)));
+    }
+}
+```
+
+<v-clicks>
+
+- 🚫 **Anti-pattern**: Mocking Spring Framework classes (RestClient fluent API)
+- ✅ **Solution**: WireMock runs real HTTP server for testing
+- 📈 **Coverage boost**: From 34% to 94% for native client
+- 🔧 **Real behavior**: Tests actual HTTP interactions
+
+</v-clicks>
+
+---
+
 # Fluent Assertion Chaining
 
 ```java {1-10|12-16|all}
@@ -822,7 +862,7 @@ Production-Ready GPT-5 Integration
 - 🔧 **Configuration**: Externalize API keys and model settings
 - 🚨 **Error Handling**: Implement robust retry and fallback mechanisms
 - 📊 **Monitoring**: Log reasoning effort levels for performance analysis
-- 🧪 **Testing**: Comprehensive unit tests with mocked dependencies
+- 🧪 **Testing**: 94% coverage with WireMock for HTTP testing
 - 🔒 **Security**: Secure API key management and validation
 
 </v-clicks>
@@ -892,6 +932,23 @@ classDiagram
 ```
 
 </div>
+
+---
+
+# Spring Boot Testing Discovery
+*What We Learned*
+
+<v-clicks>
+
+- 🚫 **@RestClientTest doesn't exist**: Only @RestTemplateTest exists in Spring Boot 3.x
+- ⚠️ **MockRestServiceServer limitation**: Only works with RestTemplate, not RestClient
+- 📚 **Documentation gap**: Spring Boot testing docs don't cover RestClient testing
+- ✅ **WireMock solution**: Real HTTP server testing for RestClient
+- 🎓 **Learning**: Sometimes framework limitations force better patterns
+
+</v-clicks>
+
+**Key Insight**: When Spring doesn't provide slice tests, external mocking libraries like WireMock often provide superior testing approaches.
 
 ---
 layout: section

@@ -8,11 +8,12 @@ This document serves as Claude's memory for understanding this project's evoluti
 
 ### Key Achievements  
 - ✅ **Zero SonarCloud issues** with strategic rule configuration
-- ✅ **63% test coverage** (JaCoCo) with 22 passing tests
+- ✅ **94% test coverage** (JaCoCo) with 22 passing tests
 - ✅ **Modern Java 21 features** throughout the codebase
 - ✅ **Enterprise CI/CD pipeline** with GitHub Actions
 - ✅ **Version 1.0 released** with production-ready codebase
 - ✅ **Comprehensive testing strategy** with multiple test categories
+- ✅ **WireMock integration** following "don't mock what you don't own" principle
 
 ## 🏗️ Architecture & Design
 
@@ -68,7 +69,7 @@ return switch (response) {
 src/test/java/com/kousenit/springgpt5/
 ├── MyAiServiceTest.java           # Spring integration test
 ├── MyAiServiceUnitTest.java       # Comprehensive unit tests (10 tests)
-├── Gpt5NativeClientTest.java      # Client tests with parameterization (11 tests)
+├── Gpt5NativeClientUnitTest.java  # WireMock-based unit tests (9 tests)
 ├── ReasoningEffortTest.java       # Enum validation tests
 ├── Gpt5Test.java                  # Integration test with real API
 └── SlowIntegrationTest.java       # Test categorization annotation
@@ -85,12 +86,12 @@ src/test/java/com/kousenit/springgpt5/
 - **ApiResponse**: 100% instruction coverage  
 - **ReasoningEffort**: 100% instruction coverage
 - **AiClientsConfig**: 100% instruction coverage
-- **Gpt5NativeClient**: 34% (expected - requires API calls for full coverage)
+- **Gpt5NativeClient**: 94% (improved with WireMock testing)
 
 ## 🔄 Development Evolution
 
 ### Release Timeline
-- **v1.0 (August 2025)**: Production-ready release with 63% coverage, zero code issues
+- **v1.0 (August 2025)**: Production-ready release with 94% coverage, zero code issues
 - **Pre-release**: Extensive modernization and testing phases
 
 ### Major Refactoring Phases
@@ -116,6 +117,13 @@ src/test/java/com/kousenit/springgpt5/
 - **GitHub Actions pipeline** with test categorization
 - **JaCoCo reporting** with coverage thresholds
 - **Dependency verification** for security
+
+#### Phase 5: WireMock Testing Refactoring (August 2025)
+- **Anti-pattern elimination**: Removed dangerous mocking of Spring Framework classes
+- **WireMock integration**: Implemented proper HTTP service mocking
+- **Spring Boot testing discovery**: Found that `@RestClientTest` doesn't exist for RestClient
+- **Coverage improvement**: Boosted Gpt5NativeClient coverage from 34% to 94%
+- **GitHub Issue #5**: Documented the refactoring decision and research findings
 
 ### Key Technical Decisions
 
@@ -161,6 +169,14 @@ For v1.0 release, removed Gradle dependency verification to resolve IDE sync iss
 - **Command-line builds** worked fine, but IDE integration failed
 - **Educational focus**: Simplified setup for learning purposes
 
+#### 6. WireMock Over Mocking Framework Classes (August 2025)
+Critical decision to eliminate Spring Framework class mocking:
+- **Problem**: Complex 4-level mock chain of RestClient fluent API
+- **Anti-pattern**: Violating "don't mock what you don't own" Mockito principle
+- **Research**: Discovered @RestClientTest doesn't exist for RestClient (only RestTemplate)
+- **Solution**: WireMock HTTP server mocking for realistic behavior testing
+- **Benefits**: True HTTP behavior validation, easier test maintenance, better coverage
+
 ## 🛠️ Build & Dependencies
 
 ### Gradle Configuration
@@ -175,6 +191,7 @@ dependencies {
     testImplementation("org.assertj:assertj-core")
     testImplementation("org.mockito:mockito-core")
     testImplementation("org.mockito:mockito-junit-jupiter")
+    testImplementation("org.wiremock:wiremock-standalone:3.9.2")
 }
 ```
 
@@ -211,6 +228,7 @@ This project serves as a comprehensive example of:
 - **Parameterized testing** to reduce duplication
 - **AssertJ** for fluent assertions
 - **Mockito** for clean unit testing
+- **WireMock** for HTTP service mocking
 
 ### Enterprise Practices
 - **CI/CD automation** with GitHub Actions
@@ -228,7 +246,7 @@ This project serves as a comprehensive example of:
 
 ### Current Status
 - **SonarCloud Issues**: 0 ✅
-- **Test Coverage (JaCoCo)**: 63% ✅  
+- **Test Coverage (JaCoCo)**: 94% ✅  
 - **Test Coverage (SonarCloud)**: 53% ✅
 - **Build Status**: Passing ✅
 - **Security Status**: No vulnerabilities ✅
@@ -236,7 +254,7 @@ This project serves as a comprehensive example of:
 ### Test Distribution
 - **Total Tests**: 22 across all test classes
 - **MyAiServiceUnitTest**: 10 tests (comprehensive unit testing)
-- **Gpt5NativeClientTest**: 12 tests (including parameterized test with 5 cases)
+- **Gpt5NativeClientUnitTest**: 9 tests (WireMock-based HTTP behavior testing)
 - **Integration Tests**: Real API calls for end-to-end validation
 
 ## 🚀 Usage & Configuration

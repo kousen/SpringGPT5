@@ -81,14 +81,12 @@ sonar {
         property("sonar.organization", "kousen-it-inc")
         property("sonar.host.url", "https://sonarcloud.io")
         
-        // Disable rules that add unnecessary complexity for small projects
-        property("sonar.issue.ignore.multicriteria", "e1,e2,e3")
+        // Disable rules that add unnecessary complexity for educational projects
+        property("sonar.issue.ignore.multicriteria", "e1,e2")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S1192") // String literal duplication
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/*.java")
-        property("sonar.issue.ignore.multicriteria.e2.ruleKey", "java:S112")  // Generic exception throwing
+        property("sonar.issue.ignore.multicriteria.e2.ruleKey", "java:S4144") // Duplicate code blocks in switch
         property("sonar.issue.ignore.multicriteria.e2.resourceKey", "**/*.java")
-        property("sonar.issue.ignore.multicriteria.e3.ruleKey", "java:S4144") // Duplicate code blocks in switch
-        property("sonar.issue.ignore.multicriteria.e3.resourceKey", "**/*.java")
     }
 }
 

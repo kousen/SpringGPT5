@@ -15,7 +15,7 @@
 - Split screen: Spring AI logo vs OpenAI logo
 - Java 21 badge prominently displayed
 - Code snippet showing pattern matching
-- "99% Test Coverage" badge
+- "94% Test Coverage" badge
 - Contrasting colors: green (Spring) vs orange (OpenAI)
 
 ---
@@ -43,7 +43,7 @@
 
 [Screen: GitHub repository overview]
 
-**"This isn't just another 'Hello World' AI demo. This is a production-ready application with 99% test coverage, zero SonarCloud issues, and comprehensive error handling. But here's what makes it special..."**
+**"This isn't just another 'Hello World' AI demo. This is a production-ready application with 94% test coverage, zero SonarCloud issues, and comprehensive error handling. But here's what makes it special..."**
 
 [Screen: Two side-by-side code files - MyAiService.java showing both approaches]
 
@@ -247,7 +247,7 @@ void shouldHandleErrorResponseInReasoningAnswer() throws Exception {
 
 **"Pattern matching makes our test assertions cleaner and type-safe. We're testing all three response types: success, error, and partial responses."**
 
-[Screen: Test coverage report showing 99%]
+[Screen: Test coverage report showing 94%]
 
 **"The beauty of sealed interfaces is that our tests can't forget to handle a response type. If we add a new case, the tests won't compile until we cover it."**
 
@@ -256,6 +256,30 @@ void shouldHandleErrorResponseInReasoningAnswer() throws Exception {
 [Screen: Parameterized test extracting text from various JSON structures]
 
 **"Instead of five similar tests, one parameterized test covers all the edge cases. This is modern testing - comprehensive but maintainable."**
+
+[Screen: Gpt5NativeClientUnitTest.java with WireMock setup]
+
+**"But here's something crucial about testing HTTP clients - I learned this the hard way. The Mockito team says 'don't mock what you don't own,' and that includes Spring's RestClient classes."**
+
+[Screen: Before/after comparison showing complex mock chain vs WireMock]
+
+**"I originally tried mocking RestClient with a 4-level mock chain - it was fragile, hard to maintain, and didn't actually test HTTP behavior. So I switched to WireMock, which runs a real HTTP server in tests."**
+
+```java
+@BeforeEach
+void setUp() {
+    wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8089));
+    wireMockServer.start();
+    
+    RestClient restClient = RestClient.builder()
+            .baseUrl("http://localhost:8089/v1")
+            .build();
+            
+    client = new Gpt5NativeClient(restClient, mapper, "gpt-5-nano");
+}
+```
+
+**"Now we're testing real HTTP interactions, not mock objects. This boosted our native client coverage from 34% to 94% and gives us confidence that our HTTP handling actually works."**
 
 ---
 
