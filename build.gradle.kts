@@ -83,11 +83,13 @@ sonar {
         property("sonar.host.url", "https://sonarcloud.io")
         
         // Disable rules that add unnecessary complexity for educational projects
-        property("sonar.issue.ignore.multicriteria", "e1,e2")
+        property("sonar.issue.ignore.multicriteria", "e1,e2,e3")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "java:S1192") // String literal duplication
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/*.java")
         property("sonar.issue.ignore.multicriteria.e2.ruleKey", "java:S4144") // Duplicate code blocks in switch
         property("sonar.issue.ignore.multicriteria.e2.resourceKey", "**/*.java")
+        property("sonar.issue.ignore.multicriteria.e3.ruleKey", "java:S125") // False positives on documentation comments
+        property("sonar.issue.ignore.multicriteria.e3.resourceKey", "**/*.java")
     }
 }
 
