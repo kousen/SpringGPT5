@@ -125,6 +125,12 @@ src/test/java/com/kousenit/springgpt5/
 - **Coverage improvement**: Boosted Gpt5NativeClient coverage from 34% to 94%
 - **GitHub Issue #5**: Documented the refactoring decision and research findings
 
+#### Phase 6: Code Quality Enhancement (August 2025)
+- **SonarQube rule re-enablement**: Re-enabled `java:S112` (Generic exception throwing) after implementing custom exceptions
+- **Version management improvement**: Extracted WireMock version to variable to eliminate hardcoded versions
+- **Maintained zero issues**: Successfully evolved from rule exclusions to proper implementation
+- **GitHub Issue #6**: Documented the rule re-enablement rationale and benefits
+
 ### Key Technical Decisions
 
 #### 1. SonarCloud Rule Exclusions
@@ -176,6 +182,14 @@ Critical decision to eliminate Spring Framework class mocking:
 - **Research**: Discovered @RestClientTest doesn't exist for RestClient (only RestTemplate)
 - **Solution**: WireMock HTTP server mocking for realistic behavior testing
 - **Benefits**: True HTTP behavior validation, easier test maintenance, better coverage
+
+#### 7. SonarQube Rule Evolution Strategy (August 2025)
+Strategic approach to code quality rule management:
+- **Initial State**: Disabled `java:S112` due to generic Exception usage
+- **Implementation**: Created `OpenAiClientException` for proper domain-specific error handling
+- **Re-enablement**: Successfully re-enabled rule after implementing custom exceptions
+- **Benefits**: Enforces better exception handling practices while maintaining educational value
+- **Lesson**: Sometimes temporary rule exclusions enable iterative quality improvements
 
 ## 🛠️ Build & Dependencies
 
