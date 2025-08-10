@@ -760,6 +760,11 @@ class Gpt5NativeClientUnitTest {
 }
 ```
 
+---
+
+# WireMock Benefits
+*Real HTTP Server Testing*
+
 <v-clicks>
 
 - 🚫 **Anti-pattern**: Mocking Spring Framework classes (RestClient fluent API)
