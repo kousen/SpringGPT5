@@ -21,7 +21,6 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  * This keeps the existing WireMock tests intact while showing the Spring-native alternative.
  */
 @RestClientTest(Gpt5NativeClient.class)
-@org.springframework.context.annotation.Import(Gpt5NativeClientSliceTest.TestConfig.class)
 class Gpt5NativeClientSliceTest {
 
     @Autowired
