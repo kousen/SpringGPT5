@@ -20,7 +20,7 @@ repositories {
 }
 
 extra["springAiVersion"] = "1.0.1"
-const val wiremockVersion = "3.9.2"
+val wiremockVersion = "3.9.2"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
