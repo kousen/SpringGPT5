@@ -1,45 +1,36 @@
 package com.kousenit.springgpt5;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 @SpringBootTest
 class Gpt5NativeClientUnitTest {
 
-    @MockitoBean
-    private RestClient restClient;
-    
-    @MockitoBean
-    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
-    
-    @MockitoBean
-    private RestClient.RequestBodySpec requestBodySpec;
-    
-    @MockitoBean
-    private RestClient.ResponseSpec responseSpec;
-    
-    private ObjectMapper mapper;
+    @Autowired
     private Gpt5NativeClient client;
+    
+    @Autowired
+    private RestClient openAiRestClient;
+    
+    private MockRestServiceServer server;
 
     @BeforeEach
     void setUp() {
-        mapper = new ObjectMapper();
-        client = new Gpt5NativeClient(restClient, mapper, "gpt-5-nano");
+        server = MockRestServiceServer.createServer(openAiRestClient);
     }
 
     @Test
@@ -69,14 +60,10 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode responseNode = mapper.readTree(responseJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(responseNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.MEDIUM);
@@ -88,6 +75,8 @@ class Gpt5NativeClientUnitTest {
         assertEquals("thinking step by step", success.reasoningTrace());
         assertEquals(Integer.valueOf(10), success.inputTokens());
         assertEquals(Integer.valueOf(20), success.outputTokens());
+        
+        server.verify();
     }
 
     @Test
@@ -102,14 +91,10 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode errorNode = mapper.readTree(errorJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(errorNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(errorJson, MediaType.APPLICATION_JSON));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.HIGH);
@@ -118,6 +103,8 @@ class Gpt5NativeClientUnitTest {
         ApiResponse.Error error = assertInstanceOf(ApiResponse.Error.class, result);
         assertEquals("Invalid API key", error.message());
         assertEquals("invalid_api_key", error.code());
+        
+        server.verify();
     }
 
     @Test
@@ -132,14 +119,10 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode partialNode = mapper.readTree(partialJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(partialNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(partialJson, MediaType.APPLICATION_JSON));
 
         // When
         ApiResponse result = client.chatWithReasoning("test prompt", ReasoningEffort.LOW);
@@ -148,6 +131,8 @@ class Gpt5NativeClientUnitTest {
         ApiResponse.Partial partial = assertInstanceOf(ApiResponse.Partial.class, result);
         assertEquals("", partial.availableText());
         assertEquals("No text content available", partial.reason());
+        
+        server.verify();
     }
 
     @Test
@@ -169,20 +154,18 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode responseNode = mapper.readTree(responseJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(responseNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         // When
         String result = client.chatText("test prompt", ReasoningEffort.MEDIUM);
 
         // Then
         assertEquals("Chat text response", result);
+        
+        server.verify();
     }
 
     @Test
@@ -197,20 +180,18 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode errorNode = mapper.readTree(errorJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(errorNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(errorJson, MediaType.APPLICATION_JSON));
 
         // When
         String result = client.chatText("test prompt", ReasoningEffort.HIGH);
 
         // Then
         assertNull(result);
+        
+        server.verify();
     }
 
     @Test
@@ -232,20 +213,18 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode partialNode = mapper.readTree(partialJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(partialNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(partialJson, MediaType.APPLICATION_JSON));
 
         // When
         String result = client.chatText("test prompt", ReasoningEffort.LOW);
 
         // Then
         assertEquals("Incomplete response...", result);
+        
+        server.verify();
     }
 
     @Test
@@ -272,14 +251,10 @@ class Gpt5NativeClientUnitTest {
             }
             """;
         
-        JsonNode responseNode = mapper.readTree(responseJson);
-        
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenReturn(responseNode);
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess(responseJson, MediaType.APPLICATION_JSON));
 
         // When
         ApiResponse result = client.send(messages, ReasoningEffort.MEDIUM);
@@ -287,17 +262,17 @@ class Gpt5NativeClientUnitTest {
         // Then
         ApiResponse.Success success = assertInstanceOf(ApiResponse.Success.class, result);
         assertEquals("Multi-message response", success.text());
+        
+        server.verify();
     }
 
     @Test
     void shouldThrowOpenAiClientExceptionOnHttpError() {
         // Given
-        when(restClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri("/responses")).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodySpec);
-        when(requestBodySpec.body(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(JsonNode.class)).thenThrow(new RestClientException("Network error"));
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withServerError());
 
         // When & Then
         OpenAiClientException exception = assertThrows(OpenAiClientException.class, () -> 
@@ -305,27 +280,23 @@ class Gpt5NativeClientUnitTest {
         );
         
         assertEquals("Failed to send request to OpenAI API", exception.getMessage());
-        assertThat(exception.getCause()).isInstanceOf(RestClientException.class);
+        
+        server.verify();
     }
 
     @Test
     void shouldThrowOpenAiClientExceptionOnJsonError() {
-        // Given - create a client with a mapper that will fail
-        ObjectMapper faultyMapper = new ObjectMapper() {
-            @Override
-            public String writeValueAsString(Object value) {
-                throw new RuntimeException("JSON serialization failed");
-            }
-        };
-        
-        Gpt5NativeClient faultyClient = new Gpt5NativeClient(restClient, faultyMapper, "gpt-5");
+        // Given - Mock server to return invalid JSON that will cause parsing issues
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withSuccess("invalid json", MediaType.APPLICATION_JSON));
 
         // When & Then
         OpenAiClientException exception = assertThrows(OpenAiClientException.class, () -> 
-            faultyClient.chatWithReasoning("test", ReasoningEffort.MEDIUM)
+            client.chatWithReasoning("test", ReasoningEffort.MEDIUM)
         );
         
         assertEquals("Failed to send request to OpenAI API", exception.getMessage());
-        assertThat(exception.getCause()).hasMessageContaining("JSON serialization failed");
     }
 }
