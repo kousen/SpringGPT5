@@ -19,7 +19,7 @@ class AiController {
     }
 
     @PostMapping("/chat")
-    public ResponseEntity<?> chat(@RequestBody ChatRequest request) {
+    public ResponseEntity<Object> chat(@RequestBody ChatRequest request) {
         if (request == null || request.prompt() == null || request.prompt().isBlank()) {
             return ResponseEntity.badRequest().body(new ErrorResponse("prompt must not be blank", "validation_error"));
         }
@@ -28,7 +28,7 @@ class AiController {
     }
 
     @PostMapping("/reason")
-    public ResponseEntity<?> reason(@RequestBody ReasonRequest request) throws OpenAiClientException {
+    public ResponseEntity<ReasonResponse> reason(@RequestBody ReasonRequest request) throws OpenAiClientException {
         if (request == null || request.prompt() == null || request.prompt().isBlank()) {
             return ResponseEntity.badRequest().body(new ErrorResponse("prompt must not be blank", "validation_error"));
         }
@@ -49,7 +49,7 @@ class AiController {
     }
 
     @PostMapping("/reason/text")
-    public ResponseEntity<?> reasonText(@RequestBody ReasonRequest request) throws OpenAiClientException {
+    public ResponseEntity<Object> reasonText(@RequestBody ReasonRequest request) throws OpenAiClientException {
         if (request == null || request.prompt() == null || request.prompt().isBlank()) {
             return ResponseEntity.badRequest().body(new ErrorResponse("prompt must not be blank", "validation_error"));
         }
@@ -66,9 +66,11 @@ class AiController {
     public record ChatRequest(String prompt) {}
     public record ReasonRequest(String prompt, ReasoningEffort effort) {}
     public record ChatResponse(String text) {}
-    public record ReasonSuccess(String text, String reasoningEffort, String reasoningTrace, Integer inputTokens, Integer outputTokens) {}
-    public record ReasonPartial(String availableText, String reason) {}
-    public record ErrorResponse(String message, String code) {}
+    public record ReasonSuccess(String text, String reasoningEffort, String reasoningTrace, Integer inputTokens, Integer outputTokens) implements ReasonResponse {}
+    public record ReasonPartial(String availableText, String reason) implements ReasonResponse {}
+    public record ErrorResponse(String message, String code) implements ReasonResponse {}
+    
+    public sealed interface ReasonResponse permits ReasonSuccess, ReasonPartial, ErrorResponse {}
 
     @ExceptionHandler(OpenAiClientException.class)
     public ResponseEntity<ErrorResponse> handleClient(OpenAiClientException ex) {
